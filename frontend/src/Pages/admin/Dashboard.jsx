@@ -2,10 +2,7 @@ import OverViewStats from "../../components/OverViewStats.jsx";
 import BookedRoomsStats from "../../components/BookedRoomsStats.jsx";
 import UpcomingBookings from "../../components/UpcomingBookings.jsx";
 import BookingTrend from "../../components/BookingTrend.jsx";
-
-
-
-
+import FilterBar from "../../components/FilterBar.jsx";
 
 const Dashboard = () => {
   return (
@@ -14,6 +11,9 @@ const Dashboard = () => {
         <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
           Overview
         </h1>
+        <div className="mt-10 flex items-center justify-center">
+          <FilterBar />
+        </div>
       </header>
 
       <section className="mb-12">
