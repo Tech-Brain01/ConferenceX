@@ -1,97 +1,47 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card.jsx";
-import DateFilter from "./DateFilter.jsx";
-
+import FilterBar from "./FilterBar.jsx";
 import {
   LineChart,
+  BarChart,
+  Bar,
   Line,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid,
   Legend,
-  BarChart,
-  Bar,
   ResponsiveContainer,
 } from "recharts";
+import { format, parseISO } from "date-fns";
+import { DownloadBookingAnalyticsExcelButton } from "./ExcelButton.jsx";
 
-import { format, addDays, startOfWeek, parseISO } from "date-fns";
-
-function getDateFromWeek(year, week) {
-  const jan4 = new Date(year, 0, 4);
-  const startOfIsoWeek = startOfWeek(jan4, { weekStartsOn: 1 });
-
-  return addDays(startOfIsoWeek, (week - 1) * 7);
-}
-
-function getDateStringsForQuickFilter(filter) {
-  const today = new Date();
-  let fromDate, toDate;
-
-  const formatDate = (date) => date.toISOString().slice(0, 10);
-
-  switch (filter) {
-    case "today":
-      fromDate = toDate = formatDate(today);
-      break;
-    case "week":
-      const firstDayOfWeek = new Date(today);
-      firstDayOfWeek.setDate(today.getDate() - today.getDay());
-      fromDate = formatDate(firstDayOfWeek);
-      toDate = formatDate(today);
-      break;
-    case "month":
-      const firstDayOfMonth = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        1
+function Booking_Over_Time({ data }) {
+  const BookingTrendTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const { bookings, bookingRefs, roomNames, userNames } =
+        payload[0].payload;
+      return (
+        <div className="bg-white p-3 border rounded shadow-lg max-w-sm text-sm">
+          <p className="font-semibold mb-2">{formatPeriod(label)}</p>
+          <p>
+            <strong>Total Bookings:</strong> {bookings}
+          </p>
+          <p>
+            <strong>Booking Refs:</strong> {bookingRefs || "N/A"}
+          </p>
+          <p>
+            <strong>Rooms:</strong> {roomNames || "N/A"}
+          </p>
+          <p>
+            <strong>Users:</strong> {userNames || "N/A"}
+          </p>
+        </div>
       );
-      fromDate = formatDate(firstDayOfMonth);
-      toDate = formatDate(today);
-      break;
-    default:
-      fromDate = "";
-      toDate = "";
-  }
-
-  return { fromDate, toDate };
-}
-
-const formatPeriod = (period, filter) => {
-  if (!period) return "";
-
-  try {
-    if (filter === "day") {
-      return format(parseISO(period), "dd MMM yyyy");
     }
+    return null;
+  };
 
-    if (filter === "week") {
-      const weekMatch = period.match(/^(\d{4})-?W?(\d{1,2})$/);
-      if (weekMatch) {
-        const year = Number(weekMatch[1]);
-        const week = Number(weekMatch[2]);
-
-        const date = getDateFromWeek(year, week);
-        return format(date, "dd MMM yyyy");
-      }
-
-      return period;
-    }
-
-    if (filter === "month") {
-      const [year, month] = period.split("-");
-      if (!year || !month) return period;
-      const date = new Date(year, Number(month) - 1);
-      return format(date, "MMM yyyy");
-    }
-
-    return format(parseISO(period), "dd MMM yyyy");
-  } catch {
-    return period;
-  }
-};
-
-function Booking_Over_Time({ data, filter }) {
   return (
     <Card className="shadow-lg mb-8 bg-white">
       <CardHeader>
@@ -105,23 +55,36 @@ function Booking_Over_Time({ data, filter }) {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="date"
-              tickFormatter={(d) => formatPeriod(d, filter)}
+              stroke="#8021EC"
               tick={{ fontSize: 12 }}
-              minTickGap={10}
+              axisLine={{ stroke: "#F96E05" }}
+              tickLine={false}
+              tickFormatter={(dateStr) => format(parseISO(dateStr), "MMM-d ")}
             />
-            <YAxis />
-            <Tooltip
-              labelFormatter={(label) => formatPeriod(label, filter)}
-              formatter={(value) => [`${value}`, "Bookings"]}
+            <YAxis
+              stroke="#8021EC"
+              tick={{ fontSize: 12 }}
+              axisLine={{ stroke: "#F96E05" }}
+              tickLine={false}
+              label={{
+                value: "Total Bookings",
+                angle: -90,
+                position: "insideLeft",
+                offset: 10,
+                fill: "#5C0CB6",
+                fontSize: 14,
+                fontWeight: "600",
+              }}
             />
+            <Tooltip content={<BookingTrendTooltip />} />
+
             <Legend />
             <Line
               type="monotone"
               dataKey="bookings"
               stroke="#6366f1"
               strokeWidth={2}
-              dot={{ r: 3 }}
-              activeDot={{ r: 5 }}
+              activeDot={{ r: 7 }}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -130,7 +93,40 @@ function Booking_Over_Time({ data, filter }) {
   );
 }
 
-function CancelledVsApprovedBarChart({ data, filter }) {
+function CancelledVsApprovedBarChart({ data }) {
+  const CancelledApprovedTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const {
+        approvedbooking,
+        cancelledbooking,
+        bookingRefs,
+        roomNames,
+        userNames,
+      } = payload[0].payload;
+      return (
+        <div className="bg-white p-3 border rounded shadow-lg max-w-sm text-sm">
+          <p className="font-semibold mb-2">{formatPeriod(label)}</p>
+          <p>
+            <strong>Total Approve:</strong> {approvedbooking}
+          </p>
+          <p>
+            <strong>Total Cancel:</strong> {cancelledbooking}
+          </p>
+          <p>
+            <strong>Booking Refs:</strong> {bookingRefs || "N/A"}
+          </p>
+          <p>
+            <strong>Rooms:</strong> {roomNames || "N/A"}
+          </p>
+          <p>
+            <strong>Users:</strong> {userNames || "N/A"}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <Card className="shadow-lg bg-white">
       <CardHeader>
@@ -144,16 +140,13 @@ function CancelledVsApprovedBarChart({ data, filter }) {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="period"
-              tickFormatter={(d) => formatPeriod(d, filter)}
+              stroke="#8021EC"
+              axisLine={{ stroke: "#F96E05" }}
+              tickFormatter={(dateStr) => format(parseISO(dateStr), "MMM-d ")}
               tick={{ fontSize: 12 }}
-              minTickGap={10}
             />
-            <YAxis />
-            <Tooltip
-              labelFormatter={(label) => formatPeriod(label, filter)}
-              formatter={(value, name) => [value, name]} 
-            />
-
+            <YAxis axisLine={{ stroke: "#F96E05" }} />
+            <Tooltip content={<CancelledApprovedTooltip />} />
             <Legend />
             <Bar dataKey="approvedbooking" fill="#10b981" name="Approved" />
             <Bar dataKey="cancelledbooking" fill="#ef4444" name="Cancelled" />
@@ -164,99 +157,152 @@ function CancelledVsApprovedBarChart({ data, filter }) {
   );
 }
 
-const BookingAnalytics = () => {
-  const defaultFilter = "week";
-  const { fromDate: defaultFrom, toDate: defaultTo } =
-    getDateStringsForQuickFilter(defaultFilter);
+const formatPeriod = (period) => {
+  try {
+    return format(parseISO(period), "MMM dd, yyyy");
+  } catch {
+    return period;
+  }
+};
 
-  const [filter, setFilter] = useState(defaultFilter);
+const BookingAnalytics = () => {
   const [bookingTrendData, setBookingTrendData] = useState([]);
   const [bookingTrendLoading, setBookingTrendLoading] = useState(false);
-
   const [cancelApprovedData, setCancelApprovedData] = useState([]);
   const [cancelApprovedLoading, setCancelApprovedLoading] = useState(false);
+  const getDefaultFromDate = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    );
+    const getDefaultToDate = new Date();
+  
+    const [filterDate, setFilterDate] = useState({
+      fromDate: getDefaultFromDate,
+      toDate: getDefaultToDate,
+    });
+  
 
-  const fetchBookingTrends = async (from, to, filterVal = filter) => {
-    setBookingTrendLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const params = new URLSearchParams({ from, to, filter: filterVal });
-      const res = await fetch(
-        `http://localhost:8080/api/admin/dashboard/booking-trends?${params.toString()}`,
-         {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-      );
-      if (!res.ok) throw new Error("Failed to fetch booking trends");
-
-      const result = await res.json();
-      const formatted = result.map((item) => ({
-        date: item.period,
-        bookings: item.totalbookings,
-      }));
-
-      setBookingTrendData(formatted);
-    } catch (error) {
-      console.error(error);
-      setBookingTrendData([]);
-    } finally {
-      setBookingTrendLoading(false);
-    }
-  };
-
-  const fetchCancelledApprovedTrend = async (from, to, filterVal = filter) => {
-    setCancelApprovedLoading(true);
-    try {
-       const token = localStorage.getItem("token");
-      const params = new URLSearchParams({ from, to, filter: filterVal });
-      const res = await fetch(
-        `http://localhost:8080/api/admin/dashboard/cancel-approved-trend?${params.toString()}`,
-         {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-      );
-      if (!res.ok) throw new Error("Failed to fetch cancel/approve trends");
-
-      const result = await res.json();
-      setCancelApprovedData(result);
-    } catch (error) {
-      console.error(error);
-      setCancelApprovedData([]);
-    } finally {
-      setCancelApprovedLoading(false);
-    }
-  };
-
-  const handleApplyFilter = (from, to, selectedFilter = defaultFilter) => {
-    setFilter(selectedFilter);
-    fetchBookingTrends(from, to, selectedFilter);
-    fetchCancelledApprovedTrend(from, to, selectedFilter);
+  const handleApplyFilter = (fromDate, toDate) => {
+    setFilterDate({ fromDate, toDate });
+    console.log("filtered applied:", fromDate, toDate);
   };
 
   useEffect(() => {
-    handleApplyFilter(defaultFrom, defaultTo, defaultFilter);
-  }, []);
+    async function fetchBookingTrends() {
+      setBookingTrendLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const from = filterDate?.fromDate
+          ? format(filterDate.fromDate, "yyyy-MM-dd")
+          : null;
+        const to = filterDate?.toDate
+          ? format(filterDate.toDate, "yyyy-MM-dd")
+          : null;
+
+        let url = `http://localhost:8080/api/admin/dashboard/booking-trends`;
+        if (from && to)
+          url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
+            to
+          )}`;
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch booking trends");
+        const result = await res.json();
+
+        const transformed = result.map((item) => ({
+          date: item.period,
+          bookings: item.total_bookings,
+          bookingRefs: item.booking_refs,
+          roomNames: item.room_names,
+          userNames: item.user_names,
+        }));
+
+        setBookingTrendData(transformed);
+      } catch (err) {
+        console.error(err);
+        setBookingTrendData([]);
+      } finally {
+        setBookingTrendLoading(false);
+      }
+    }
+    fetchBookingTrends();
+  }, [filterDate]);
+
+  useEffect(() => {
+    async function fetchCancelledApprovedData() {
+      setCancelApprovedLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const from = filterDate?.fromDate
+          ? format(filterDate.fromDate, "yyyy-MM-dd")
+          : null;
+        const to = filterDate?.toDate
+          ? format(filterDate.toDate, "yyyy-MM-dd")
+          : null;
+
+        let url = `http://localhost:8080/api/admin/dashboard/cancel-approved-trend`;
+        if (from && to)
+          url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
+            to
+          )}`;
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-type": "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error("failed to fetch booking trends");
+        const result = await res.json();
+
+        const transformed = result.map((item) => ({
+          period: item.period,
+          approvedbooking: item.approvedbooking,
+          cancelledbooking: item.cancelledbooking,
+          bookings: item.total_bookings,
+          bookingRefs: item.booking_refs,
+          roomNames: item.room_names,
+          userNames: item.user_names,
+        }));
+
+        setCancelApprovedData(transformed);
+      } catch (err) {
+        console.error(err);
+        setCancelApprovedData([]);
+      } finally {
+        setCancelApprovedLoading(false);
+      }
+    }
+    fetchCancelledApprovedData();
+  }, [filterDate]);
 
   return (
     <div className="min-h-screen bg-gray-100 px-6 py-10">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10">
+        <header className="text-center mb-10">
           <h1 className="text-4xl font-bold text-indigo-700 mb-2">
             📊 Booking Analytics
           </h1>
           <p className="text-gray-600">
             Track and visualize your bookings with clarity.
           </p>
-        </div>
-
-        <div className="mb-8 flex justify-center">
-          <DateFilter
+          <DownloadBookingAnalyticsExcelButton filterDate={filterDate}/>
+          <div className="mt-10 flex items-center justify-center">
+             <FilterBar
             onApply={handleApplyFilter}
-            defaultFrom={defaultFrom}
-            defaultTo={defaultTo}
-            defaultFilter={defaultFilter}
+            initialFromDate={filterDate.fromDate}
+            initialToDate={filterDate.toDate}
           />
-        </div>
+          </div>
+        </header>
 
         <div className="space-y-12">
           {bookingTrendLoading ? (
@@ -264,7 +310,7 @@ const BookingAnalytics = () => {
               Loading booking trends...
             </p>
           ) : (
-            <Booking_Over_Time data={bookingTrendData} filter={filter} />
+            <Booking_Over_Time data={bookingTrendData} />
           )}
 
           {cancelApprovedLoading ? (
@@ -272,10 +318,7 @@ const BookingAnalytics = () => {
               Loading cancelled vs approved chart...
             </p>
           ) : (
-            <CancelledVsApprovedBarChart
-              data={cancelApprovedData}
-              filter={filter}
-            />
+            <CancelledVsApprovedBarChart data={cancelApprovedData} />
           )}
         </div>
       </div>

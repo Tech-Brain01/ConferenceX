@@ -149,7 +149,7 @@ const ManageBookings = () => {
      
       <div className="flex flex-wrap justify-center gap-3">
         {statusTabs.map((status) => (
-          <button
+          <button 
             key={status}
             onClick={() => setActiveStatus(status)}
             className={`px-4 py-2 rounded-md text-sm font-semibold transition ${

@@ -1,18 +1,11 @@
 import React, { useEffect, useState } from "react";
-import {
-  Card,
-  CardHeader,
-  CardContent,
-} from "./ui/card.jsx";
-import {
-  AreaChart,
-  Area,
-  ResponsiveContainer,
-} from "recharts";
+import { Card, CardHeader, CardContent } from "./ui/card.jsx";
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import {
   CalendarDaysIcon,
   BuildingOfficeIcon,
 } from "@heroicons/react/24/solid";
+import { format } from "date-fns";
 
 import { MdCurrencyRupee } from "react-icons/md";
 
@@ -38,7 +31,9 @@ function TotalBookingsCard({ totalbookings }) {
               Total Bookings
             </h3>
             <p className="text-3xl font-extrabold">{totalbookings}</p>
-            <p className="text-green-300 text-xs mt-1 font-medium">+20% from last month</p>
+            <p className="text-green-300 text-xs mt-1 font-medium">
+              +20% from last month
+            </p>
           </div>
         </div>
         <div className="h-24 mt-4">
@@ -81,7 +76,9 @@ function TotalRevenueCard({ totalrevenue }) {
               Total Revenue
             </h3>
             <p className="text-3xl font-extrabold">₹{totalrevenue}</p>
-            <p className="text-green-300 text-xs mt-1 font-medium">+15% from last month</p>
+            <p className="text-green-300 text-xs mt-1 font-medium">
+              +15% from last month
+            </p>
           </div>
         </div>
         <div className="h-24 mt-4">
@@ -144,7 +141,7 @@ function TotalRoomCard({ totalroom }) {
   );
 }
 
-const OverViewStats = () => {
+const OverViewStats = ({ filterDate }) => {
   const [stats, setStats] = useState({
     totalbookings: 0,
     totalrevenue: 0,
@@ -155,15 +152,28 @@ const OverViewStats = () => {
     async function fetchStats() {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(
-          `http://localhost:8080/api/admin/dashboard/stats`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+
+        const from = filterDate?.fromDate
+          ? format(filterDate.fromDate, "yyyy-MM-dd")
+          : null;
+        const to = filterDate?.toDate
+          ? format(filterDate.toDate, "yyyy-MM-dd")
+          : null;
+
+        let url = `http://localhost:8080/api/admin/dashboard/stats`;
+
+        if (from && to) {
+          url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
+            to
+          )}`;
+        }
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
@@ -174,7 +184,7 @@ const OverViewStats = () => {
       }
     }
     fetchStats();
-  }, []);
+  }, [filterDate]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">

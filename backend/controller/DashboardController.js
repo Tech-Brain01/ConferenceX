@@ -13,8 +13,11 @@ import {
 
 export const getDashboardStatsController = async (req, res) => {
   try {
-    const bookingsResult = await getTotalBookings();
-    const revenueResult = await getTotalRevenue();
+    const fromDate = req.query.from || null;
+    const toDate = req.query.to || null;
+
+    const bookingsResult = await getTotalBookings(fromDate, toDate);
+    const revenueResult = await getTotalRevenue(fromDate, toDate);
     const roomResult = await getTotalRoom();
 
     res.json({
@@ -28,19 +31,27 @@ export const getDashboardStatsController = async (req, res) => {
   }
 };
 
+
 export const getBookedRoomsController = async (req, res) => {
   try {
-    const rooms = await getBookedRooms();
+    const fromDate = req.query.from || null;
+    const toDate = req.query.to || null;
+ 
+    const rooms = await getBookedRooms(fromDate, toDate);
     res.json(rooms);
   } catch (err) {
-    console.error(err);
+    console.error("Server error in getBookedRoomsController:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+
 export const getUpcomingBookingsController = async (req, res) => {
   try {
-    const upcomingBookings = await getUpcomingBookings();
+    const fromDate = req.query.from || null;
+    const toDate = req.query.to || null;
+
+    const upcomingBookings = await getUpcomingBookings(fromDate, toDate);
     res.json(upcomingBookings);
   } catch (err) {
     console.error(err);
@@ -50,11 +61,10 @@ export const getUpcomingBookingsController = async (req, res) => {
 
 export const getBookingTrendsController = async (req, res) => {
   try {
-    const filter = req.query.filter || "week";
-    const fromDate = req.query.from;
-    const toDate = req.query.to;
+    const fromDate = req.query.from || null;
+    const toDate = req.query.to || null;
 
-    const trends = await getBookingTrends(filter, fromDate, toDate);
+    const trends = await getBookingTrends( fromDate, toDate);
     res.json(trends);
   } catch (err) {
     console.error(err);
@@ -64,12 +74,14 @@ export const getBookingTrendsController = async (req, res) => {
 
 export const getCancelledvsApprovedTrendController = async (req, res) => {
   try {
-    const filter = req.query.filter || "week";
-    const fromDate = req.query.from;
-    const toDate = req.query.to;
+    const fromDate = req.query.from || null;
+    const toDate = req.query.to || null;
 
-    const trend = await getCancelledvsApprovedTrend(filter, fromDate, toDate);
+    const trend = await getCancelledvsApprovedTrend( fromDate, toDate);
     res.json(trend);
+    console.log("From:", fromDate, "To:", toDate);
+   
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -79,11 +91,11 @@ export const getCancelledvsApprovedTrendController = async (req, res) => {
 
 export const getRevenueTrendsController = async (req, res) => {
   try {
-    const filter = req.query.filter || "week";
-    const fromDate = req.query.from;
-    const toDate = req.query.to;
+    
+    const fromDate = req.query.from || null;
+    const toDate = req.query.to || null;
 
-    const trends = await getRevenueTrends(filter, fromDate, toDate);
+    const trends = await getRevenueTrends( fromDate, toDate);
     res.json(trends);
   } catch (err) {
     console.error(err);
@@ -93,7 +105,11 @@ export const getRevenueTrendsController = async (req, res) => {
 
 export const getRevenueByRoomController = async (req, res) => {
   try {
-    const revenueByRoom = await getRevenueByRoom();
+    
+    const fromDate = req.query.from || null;
+    const toDate = req.query.to || null;
+
+    const revenueByRoom = await getRevenueByRoom(fromDate , toDate);
     res.json(revenueByRoom);
   } catch (err) {
     console.error(err);
@@ -103,12 +119,14 @@ export const getRevenueByRoomController = async (req, res) => {
 
 export const getRevenueLossFromCancellationsController = async (req, res) => {
   try {
-    const loss = await getRevenueLossFromCancellations();
+    const fromDate = req.query.from || null;
+    const toDate = req.query.to || null;
+
+    const loss = await getRevenueLossFromCancellations(fromDate, toDate);
     res.json({ revenueloss: loss });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Revenue loss fetch failed:", err.message, err.stack);
+    res.status(500).json({ message: "Server error fetching revenue loss" });
   }
 };
-
 

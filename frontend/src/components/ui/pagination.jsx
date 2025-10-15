@@ -17,7 +17,7 @@ function Pagination({ className, ...props }) {
       className={cn("mx-auto flex w-full justify-center", className)}
       {...props}
     />
-  );
+  ); 
 }
 
 function PaginationContent({ className, ...props }) {
