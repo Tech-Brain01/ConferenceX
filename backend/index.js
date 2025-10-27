@@ -8,6 +8,9 @@ import userRoutes from "./routes/userBookingRoute.js";
 import adminBookingRoutes from "./routes/adminBookingRoutes.js";
 import ticketRoutes from "./routes/TicketRoutes.js";
 import dashboardRoutes from "./routes/DashboardRoute.js";
+import session from 'express-session';
+import svgCaptcha from 'svg-captcha';
+import userDashboardRoutes from "./routes/UserDashboardRoute.js";
 
 dotenv.config();
 const  app = express();
@@ -20,10 +23,36 @@ app.use(cors({
 }));
 
 
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: false, 
+    httpOnly: true,
+    maxAge: 5 * 60 * 1000 
+  }
+}));
+
+
 
 
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
+
+app.get('/api/captcha', (req, res) => {
+  const captcha = svgCaptcha.create({
+    size: 5,
+    noise: 3,
+    color: true,
+    background: '#f4f4f4'
+  });
+
+  req.session.captcha = captcha.text;
+
+  res.type('svg');
+  res.status(200).send(captcha.data);
+});
 
 
 app.use("/api/rooms", roomsRouter);
@@ -33,6 +62,7 @@ app.use("/api/bookings", userRoutes  )
 app.use("/api/auth", authRouter);
 app.use("/api/master",masterRoutes);
 app.use("/api/tickets", ticketRoutes);
+app.use("/api/user/dashboard", userDashboardRoutes);
 
 app.listen(process.env.PORT, () => {
     console.log(`server running on port ${process.env.PORT}`);

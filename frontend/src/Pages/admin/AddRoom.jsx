@@ -54,13 +54,25 @@ const AddRoom = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+const handleChange = (e) => {
+  const { name, value } = e.target;
+
+  if (name === "name") {
+    // Allow alphanumeric and spaces, but not starting with a space
+    if (/^[A-Za-z0-9][A-Za-z0-9 ]*$/.test(value)) {
+      setNewRoom((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  } else {
     setNewRoom((prev) => ({
       ...prev,
       [name]: value,
     }));
-  };
+  }
+};
+
 
   const handleFeatureToggle = (id) => {
     setNewRoom((prev) => {
@@ -148,6 +160,8 @@ const AddRoom = () => {
       const caps = await capRes.json();
       const feats = await featRes.json();
 
+      
+
       setCapacities(caps.filter((c) => !c.hidden));
       setFeatures(feats.filter((f) => !f.hidden));
     };
@@ -169,7 +183,7 @@ const AddRoom = () => {
           <Button
             variant="outline"
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-sm text-black hover:text-gray-900 dark:hover:text-black transition"
+            className="flex items-center gap-2 text-xs text-black hover:text-gray-900 dark:hover:text-black transition"
           >
             <ArrowPathIcon className="w-5 h-5 rotate-180" />
             Back
@@ -196,6 +210,8 @@ const AddRoom = () => {
               id="name"
               name="name"
               value={newRoom.name}
+              pattern="^[A-Za-z0-9]+$"
+              title="Room name must contain only letters and numbers, no spaces or special characters."
               onChange={handleChange}
               placeholder="Enter room name"
               className="mt-2 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-400"

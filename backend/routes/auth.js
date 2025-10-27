@@ -24,6 +24,13 @@ router.get('/users', authenticateJWT, isAdmin, async (req, res) => {
 router.post('/signup', async (req, res) => {
   const { name, email, password } = req.body;
 
+    if (!captcha || captcha !== req.session.captcha) {
+    return res.status(400).json({ error: 'Invalid or missing CAPTCHA' });
+  }
+
+  
+  req.session.captcha = null;
+
   try {
    
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -50,28 +57,60 @@ router.post('/signup', async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  const [user] = await pool.query("select * from users where email = ?", [email]);
+router.post('/login', async (req, res) => {
+  const { email, password, captcha } = req.body;
 
-  if (!user.length) return res.status(400).json({ error: "User not found" });
+   console.log("Submitted CAPTCHA:", captcha);
+  console.log("Stored session CAPTCHA:", req.session.captcha);
 
-  if (user[0].isrestrict === 1) {
-    return res.status(403).json({ error: "User is restricted and cannot log in" });
+
+  if (!captcha || captcha !== req.session.captcha) {
+    return res.status(400).json({ error: 'Invalid or missing CAPTCHA' });
   }
 
-  const match = await bcrypt.compare(password, user[0].password);
-  if (!match) return res.status(400).json({ error: "Invalid password" });
+  req.session.captcha = null;
 
-  const token = jwt.sign(
-    { id: user[0].id, name: user[0].name, email: user[0].email, role: user[0].role },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" }
-  );
+  try {
+    const [user] = await pool.query("SELECT * FROM users WHERE email = ?", [email]);
 
-  await pool.query("UPDATE users SET lastLogin = NOW() WHERE id = ?", [user[0].id]);
+    if (!user.length) return res.status(400).json({ error: "User not found" });
 
-  res.json({ message: "login successful", token, user: { id: user[0].id,name: user[0].name, email: user[0].email, role: user[0].role , lastLogin: user[0].lastLogin} });
+    if (user[0].isrestrict === 1) {
+      return res.status(403).json({ error: "User is restricted" });
+    }
+
+    const match = await bcrypt.compare(password, user[0].password);
+    if (!match) return res.status(400).json({ error: "Invalid password" });
+
+    const token = jwt.sign(
+      {
+        id: user[0].id,
+        name: user[0].name,
+        email: user[0].email,
+        role: user[0].role
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    await pool.query("UPDATE users SET lastLogin = NOW() WHERE id = ?", [user[0].id]);
+
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user[0].id,
+        name: user[0].name,
+        email: user[0].email,
+        role: user[0].role,
+        lastLogin: user[0].lastLogin
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 

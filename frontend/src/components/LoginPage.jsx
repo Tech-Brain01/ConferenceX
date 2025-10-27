@@ -1,17 +1,34 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "./ui/input.jsx";
 import { Label } from "./ui/label.jsx";
 import jwtDecode from "jwt-decode";
 import { BackgroundBeams } from "./ui/beam-background.jsx";
 import { toast } from "sonner";
 
-
 const LoginPage = ({ onLogin }) => {
-
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaImg, setCaptchaImg] = useState(null);
+  const [captchaInput, setCaptchaInput] = useState("");
+
+  const loadCaptcha = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/captcha", {
+        credentials: "include",
+      });
+
+      const svg = await res.text();
+      setCaptchaImg(svg);
+    } catch (err) {
+      console.error("Error loading captcha:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadCaptcha();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,7 +36,8 @@ const LoginPage = ({ onLogin }) => {
       const res = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        credentials: "include",
+        body: JSON.stringify({ email, password ,  captcha: captchaInput, }),
       });
 
       const data = await res.json();
@@ -33,24 +51,23 @@ const LoginPage = ({ onLogin }) => {
         if (decodedUser?.role === "admin") {
           toast.success("Welcome admin");
         }
-        if(decodedUser?.role === "user") {
+        if (decodedUser?.role === "user") {
           toast.success(`Welcome ${decodedUser.name}`);
-
         }
 
         navigate("/rooms");
       } else {
-      if (res.status === 403) {
-        toast.error("Your account is restricted and cannot log in.");
-      } else {
-        toast.error(data.error || "Login failed");
+        if (res.status === 403) {
+          toast.error("Your account is restricted and cannot log in.");
+        } else {
+          toast.error(data.error || "Login failed");
+        }
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Network error, please try again later.");
     }
-  } catch (error) {
-    console.error("Login error:", error);
-    toast.error("Network error, please try again later.");
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-950 to-black text-white px-4">
@@ -92,7 +109,7 @@ const LoginPage = ({ onLogin }) => {
             <Label htmlFor="password" className="text-sm">
               Password
             </Label>
-            <Input 
+            <Input
               id="password"
               type="password"
               placeholder="Enter your password"
@@ -102,6 +119,31 @@ const LoginPage = ({ onLogin }) => {
               required
             />
           </div>
+          <div>
+            <Label htmlFor="captcha" className="text-sm">
+              Enter CAPTCHA
+            </Label>
+            <div
+              className="my-2"
+              dangerouslySetInnerHTML={{ __html: captchaImg }}
+            ></div>
+            <Input
+              id="captcha"
+              type="text"
+              placeholder="Enter the text above"
+              value={captchaInput}
+              onChange={(e) => setCaptchaInput(e.target.value)}
+              className="bg-gray-800 text-white border border-gray-600"
+              required
+            />
+          </div>
+          <button
+            type="button"
+            className="text-sm text-cyan-400 hover:underline"
+            onClick={loadCaptcha} 
+          >
+            Refresh CAPTCHA
+          </button>
 
           <button
             type="submit"

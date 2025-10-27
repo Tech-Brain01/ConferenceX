@@ -185,7 +185,7 @@ const BookingAnalytics = () => {
 
   const handleApplyFilter = (fromDate, toDate) => {
     setFilterDate({ fromDate, toDate });
-    console.log("filtered applied:", fromDate, toDate);
+    // console.log("filtered applied:", fromDate, toDate);
   };
 
   useEffect(() => {

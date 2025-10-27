@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import jwtDecode from "jwt-decode"; // ✅ decode the token
+import { useState, useEffect } from "react";
+import jwtDecode from "jwt-decode";
 import { Input } from "./ui/input.jsx";
 import { Label } from "./ui/label.jsx";
 import { BackgroundBeams } from "./ui/beam-background.jsx";
@@ -11,6 +11,25 @@ const SignupPage = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [captchaImg, setCaptchaImg] = useState(null);
+  const [captchaInput, setCaptchaInput] = useState("");
+
+  const loadCaptcha = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/captcha", {
+        credentials: "include",
+      });
+
+      const svg = await res.text();
+      setCaptchaImg(svg);
+    } catch (err) {
+      console.error("Error loading captcha:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadCaptcha();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,6 +38,7 @@ const SignupPage = ({ onLogin }) => {
       const res = await fetch("http://localhost:8080/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ name, email, password }),
       });
 
@@ -28,7 +48,7 @@ const SignupPage = ({ onLogin }) => {
         localStorage.setItem("token", data.token);
 
         const decodedUser = jwtDecode(data.token);
-        // console.log("✅ Decoded token after signup:", decodedUser);
+        // console.log(" Decoded token after signup:", decodedUser);
 
         onLogin(decodedUser);
 
@@ -106,6 +126,33 @@ const SignupPage = ({ onLogin }) => {
               required
             />
           </div>
+
+          <div>
+            <Label htmlFor="captcha" className="text-sm">
+              Enter CAPTCHA
+            </Label>
+            <div
+              className="my-2"
+              dangerouslySetInnerHTML={{ __html: captchaImg }}
+            ></div>
+            <Input
+              id="captcha"
+              type="text"
+              placeholder="Enter the text above"
+              value={captchaInput}
+              onChange={(e) => setCaptchaInput(e.target.value)}
+              className="bg-gray-800 text-white border border-gray-600"
+              required
+            />
+          </div>
+          <button
+            type="button"
+            className="text-sm text-cyan-400 hover:underline"
+            onClick={loadCaptcha}
+          >
+            Refresh CAPTCHA
+          </button>
+
           <button
             type="submit"
             className="w-full py-2 bg-cyan-500 text-white rounded-xl hover:bg-cyan-400 transition-all duration-200"

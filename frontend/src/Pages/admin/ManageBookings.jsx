@@ -12,6 +12,13 @@ import {
   PaginationNext,
   PaginationEllipsis,
 } from "../../components/ui/pagination.jsx";
+import { Input } from "../../components/ui/input.jsx";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "../../components/ui/popover.jsx";
+import { Button } from "../../components/ui/Button.jsx";
 const statusTabs = ["all", "pending", "approved", "rejected", "cancelled"];
 
 const ManageBookings = () => {
@@ -19,6 +26,7 @@ const ManageBookings = () => {
   const [activeStatus, setActiveStatus] = useState("all");
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const bookingsPerPage = 6;
@@ -45,7 +53,11 @@ const ManageBookings = () => {
         return;
       }
 
-      setBookings(data.bookings);
+      const sortedBookings = data.bookings.sort(
+        (a, b) => new Date(a.start_date) - new Date(b.start_date)
+      );
+
+      setBookings(sortedBookings);
     } catch (err) {
       console.error("Fetch error:", err);
       setBookings([]);
@@ -95,11 +107,17 @@ const ManageBookings = () => {
     fetchBookings(activeStatus);
   }, [activeStatus]);
 
-  const totalPages = Math.ceil(bookings.length / bookingsPerPage);
+  const uniqueRooms = Array.from(new Set(bookings.map((b) => b.room_name)));
+
+  const filteredBookings = bookings.filter(
+    (booking) => !selectedRoom || booking.room_name === selectedRoom
+  );
+
+  const totalPages = Math.ceil(filteredBookings.length / bookingsPerPage);
 
   const indexOfLastBooking = currentPage * bookingsPerPage;
   const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
-  const currentBookings = bookings.slice(
+  const currentBookings = filteredBookings.slice(
     indexOfFirstBooking,
     indexOfLastBooking
   );
@@ -141,15 +159,48 @@ const ManageBookings = () => {
       <h1 className="text-4xl font-bold mb-10 text-center text-indigo-700 dark:text-indigo-400">
         Manage Bookings
       </h1>
-    
+
+      <div className="flex items-center justify-end mb-4">
+        <Popover>
+          <PopoverTrigger className="border rounded-2xl p-2 border-cyan-300 text-base cursor-pointer">
+            Filter by room name:{" "}
+            <span className="font-semibold">{selectedRoom || "All"}</span>
+          </PopoverTrigger>
+          <PopoverContent className="max-h-60 overflow-y-auto w-48 p-2 bg-white">
+            <Button
+              onClick={() => setSelectedRoom("")}
+              className={`block w-full text-left px-3 py-1 rounded-md mb-2 ${
+                selectedRoom === ""
+                  ? "bg-indigo-600 text-white"
+                  : "hover:bg-gray-100"
+              }`}
+            >
+              All Rooms
+            </Button>
+            {uniqueRooms.map((room) => (
+              <Button
+                key={room}
+                onClick={() => setSelectedRoom(room)}
+                className={`block w-full text-left px-3 py-1 rounded-md mb-1 ${
+                  selectedRoom === room
+                    ? "bg-indigo-600 text-white"
+                    : "hover:bg-gray-100"
+                }`}
+              >
+                {room}
+              </Button>
+            ))}
+          </PopoverContent>
+        </Popover>
+      </div>
+
       <p className="text-black bg-indigo-100 p-2 rounded-lg mb-4 w-fit">
         Total bookings: {bookings.length}
       </p>
 
-     
       <div className="flex flex-wrap justify-center gap-3">
         {statusTabs.map((status) => (
-          <button 
+          <button
             key={status}
             onClick={() => setActiveStatus(status)}
             className={`px-4 py-2 rounded-md text-sm font-semibold transition ${

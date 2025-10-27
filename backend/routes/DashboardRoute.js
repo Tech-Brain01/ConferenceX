@@ -12,6 +12,9 @@ import {
 import { authenticateJWT, isAdmin } from "../middleware/authMiddleware.js";
 import {BookingAnalyticsExcelReportController, DashboardExcelReportController, RevenueAnalyticsExcelReportController} from "../controller/ExcelController.js";
 
+import { getUserDashboardStatsController } from "../controller/UserDashboardController.js";
+
+
 const router = express.Router();
 
 
@@ -27,5 +30,8 @@ router.get("/revenue-loss",authenticateJWT , isAdmin, getRevenueLossFromCancella
 router.get("/export-excel-dashboard", authenticateJWT, isAdmin, DashboardExcelReportController);
 router.get("/export-excel-booking-analytics", authenticateJWT , isAdmin , BookingAnalyticsExcelReportController);
 router.get("/export-excel-revenue-analytics", authenticateJWT , isAdmin , RevenueAnalyticsExcelReportController);
+
+
+router.get("/stats" , authenticateJWT , getUserDashboardStatsController);
 
 export default router;

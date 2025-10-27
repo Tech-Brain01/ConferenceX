@@ -11,6 +11,8 @@ import { authenticateJWT, isAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+
+
 //user create ticket
 router.post("/create", authenticateJWT, createTicketController);
 

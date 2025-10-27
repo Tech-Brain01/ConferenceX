@@ -4,6 +4,7 @@ import {
   CalendarDaysIcon,
   ChatBubbleLeftIcon,
   UserCircleIcon,
+  HomeIcon
   // ArrowLeftOnRectangleIcon, 
 } from "@heroicons/react/24/outline";
 import { Sidebar, SidebarBody, SidebarLink } from "../ui/SideBarUi.jsx";
@@ -17,6 +18,11 @@ const UserSidebar = ({ user, logout }) => {
   };
 
   const links = [
+    {
+      label: "My Dashboard",
+      href: "/dashboard/user",
+      icon: <HomeIcon className="h-5 w-5 shrink-0" />,
+    },
     {
       label: "My Bookings",
       href: "/dashboard/bookings",

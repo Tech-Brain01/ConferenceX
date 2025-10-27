@@ -19,6 +19,7 @@ import UserDashboard from "./Pages/UserDashboard.jsx";
 import DashboardTabs from "./components/userDashboard/DasboardTabs.jsx";
 import SupportPage from "./components/userDashboard/SupportPage.jsx";
 import Profile from "./components/userDashboard/Profile.jsx";
+import DashboardUser from "./components/userDashboard/Dashboard.jsx";
 
 // Admin Pages
 import AdminDashboard from "./Pages/admin/AdminDashboard.jsx";
@@ -87,6 +88,7 @@ function AppWrapper() {
           {/* User Route */}
           <Route path="/dashboard" element={<UserDashboard />}>
             <Route index element={<Navigate to="bookings" />} />
+            <Route path="user" element={<DashboardUser/>}/>
             <Route path="bookings" element={<DashboardTabs />} />
             <Route path="support" element={<SupportPage />} />
             <Route path="profile" element={<Profile />} />

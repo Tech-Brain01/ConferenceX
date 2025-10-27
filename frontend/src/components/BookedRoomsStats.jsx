@@ -106,7 +106,7 @@ const BookedRoomsStats = ({ filterDate }) => {
         if (!res.ok) throw new Error("Failed to fetch room stats");
 
         const data = await res.json();
-        console.log("Rooms fetched:", data);
+        //  console.log("Rooms fetched:", data);
 
         setRooms(data);
         setFilteredRooms(data);

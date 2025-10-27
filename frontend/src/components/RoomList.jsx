@@ -113,8 +113,8 @@ const RoomList = () => {
       image: `http://localhost:8080/uploads/${room.image}`,
       description: (
         <div className="space-y-2 text-sm text-neutral-300">
-          <div className="flex items-center justify-between">
-            <Badge
+          <div className="flex items-center justify-center">
+            {/* <Badge
               variant={isAvailable ? "secondary" : "destructive"}
               className="flex items-center gap-2"
             >
@@ -124,7 +124,7 @@ const RoomList = () => {
                 }`}
               ></span>
               {isAvailable ? "Available" : "Not Available"}
-            </Badge>
+            </Badge> */}
 
             {/* Price */}
             <span className="text-green-400 font-semibold text-sm">

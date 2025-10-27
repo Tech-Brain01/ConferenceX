@@ -94,22 +94,22 @@ export const getUpcomingBookings = async (fromDate, toDate) => {
 
 export const getBookingTrends = async (fromDate, toDate) => {
   const query = `
-    SELECT 
-      r.id,
-      DATE_FORMAT(b.start_date, '%Y-%m-%d') AS period,
-      COUNT(*) AS total_bookings,
-      GROUP_CONCAT(DISTINCT b.booking_ref ORDER BY b.booking_ref SEPARATOR ', ') AS booking_refs,
-      GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ', ') AS room_names,
-      GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS user_names
-    FROM bookings b
-    JOIN rooms r ON b.room_id = r.id
-    JOIN users u ON b.user_id = u.id
-    WHERE b.status = 'approved'
-      AND b.payment_status = 'paid'
-      AND (? IS NULL OR b.start_date >= ?)
-      AND (? IS NULL OR b.start_date <= ?)
-    GROUP BY r.id , period
-    ORDER BY period
+   SELECT 
+  DATE_FORMAT(b.start_date, '%Y-%m-%d') AS period,
+  COUNT(*) AS total_bookings,
+  GROUP_CONCAT(DISTINCT b.booking_ref ORDER BY b.booking_ref SEPARATOR ', ') AS booking_refs,
+  GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ', ') AS room_names,
+  GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS user_names
+FROM bookings b
+JOIN rooms r ON b.room_id = r.id
+JOIN users u ON b.user_id = u.id
+WHERE b.status = 'approved'
+  AND b.payment_status = 'paid'
+  AND (? IS NULL OR b.start_date >= ?)
+  AND (? IS NULL OR b.start_date <= ?)
+GROUP BY period
+ORDER BY period
+
   `;
 
   const params = [fromDate, fromDate, toDate, toDate];
@@ -120,13 +120,13 @@ export const getBookingTrends = async (fromDate, toDate) => {
 
 export const getCancelledvsApprovedTrend = async (fromDate, toDate) => {
   let query = `
-    SELECT DATE(start_date) AS period,
-           r.id,
-           COUNT(CASE WHEN status = 'cancelled' THEN 1 END) AS cancelledbooking,
-           COUNT(CASE WHEN status = 'approved' THEN 1 END) AS approvedbooking,
-           GROUP_CONCAT(DISTINCT b.booking_ref ORDER BY b.booking_ref SEPARATOR ', ') AS booking_refs,
-           GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ', ') AS room_names,
-           GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS user_names
+    SELECT 
+      DATE(b.start_date) AS period,
+      COUNT(CASE WHEN b.status = 'cancelled' THEN 1 END) AS cancelledbooking,
+      COUNT(CASE WHEN b.status = 'approved' THEN 1 END) AS approvedbooking,
+      GROUP_CONCAT(DISTINCT b.booking_ref ORDER BY b.booking_ref SEPARATOR ', ') AS booking_refs,
+      GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ', ') AS room_names,
+      GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS user_names
     FROM bookings b
     JOIN rooms r ON b.room_id = r.id
     JOIN users u ON b.user_id = u.id
@@ -135,15 +135,16 @@ export const getCancelledvsApprovedTrend = async (fromDate, toDate) => {
   const params = [];
 
   if (fromDate && toDate) {
-    query += ` WHERE start_date BETWEEN ? AND ?`;
+    query += ` WHERE b.start_date BETWEEN ? AND ?`;
     params.push(fromDate, toDate);
   }
 
-  query += ` GROUP BY r.id, period ORDER BY period`;
+  query += ` GROUP BY DATE(b.start_date) ORDER BY DATE(b.start_date);`;
 
   const [rows] = await pool.query(query, params);
   return rows;
 };
+
 
 export const getRevenueTrends = async (fromDate, toDate) => {
   const query = `
@@ -168,7 +169,7 @@ ORDER BY period
 export const getRevenueByRoom = async (fromDate, toDate) => {
   const query = `
   SELECT 
-  r.id, 
+  
   COUNT(b.id) AS total_bookings,
   GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS user_names,
   GROUP_CONCAT(DISTINCT b.booking_ref ORDER BY b.booking_ref SEPARATOR ', ') AS booking_refs,
@@ -181,7 +182,7 @@ LEFT JOIN bookings b
   AND b.payment_status = 'paid'
   AND b.start_date BETWEEN ? AND ?
 LEFT JOIN users u ON b.user_id = u.id
-GROUP BY r.id, r.name
+GROUP BY  r.name
 ORDER BY totalrevenue DESC
 
 
