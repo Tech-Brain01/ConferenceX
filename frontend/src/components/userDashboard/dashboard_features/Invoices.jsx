@@ -91,9 +91,9 @@ function Invoices() {
                     <TableHead>Invoice Number</TableHead>
                     <TableHead>Room Name</TableHead>
                     <TableHead>Issue Date</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Total Amount</TableHead>
+                    <TableHead>Amount</TableHead>
                     <TableHead>Tax</TableHead>
+                    <TableHead>Total Amount</TableHead>
                     <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -102,12 +102,12 @@ function Invoices() {
                     downloadInvoiceData.map((iv, idx) => (
                       <TableRow key={idx}>
                         <TableCell>{idx + 1}</TableCell>
-                        <TableCell>{iv.invoices_number}</TableCell>
+                        <TableCell>{iv. Invoice_no}</TableCell>
                         <TableCell>{iv.room_name}</TableCell>
-                        <TableCell>{format(parseISO(iv.issue_date), "MMM dd, yyyy")}</TableCell>
-                        <TableCell>{format(parseISO(iv.due_date), "MMM dd, yyyy")}</TableCell>
-                        <TableCell>₹{iv.total_amount}</TableCell>
-                        <TableCell>₹{iv.tax}</TableCell>
+                        <TableCell>{format(parseISO(iv.Issue_date), "MMM dd, yyyy")}</TableCell>
+                        <TableCell>₹{iv.Amt}</TableCell>
+                        <TableCell>₹{iv.gst}</TableCell>
+                        <TableCell>₹{iv.Total_Amt}</TableCell>
                         <TableCell>
                           <InvoicePDF invoice={iv} />
                         </TableCell>

@@ -6,72 +6,106 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
 
-
 const router = express.Router();
 
-
-router.get('/users', authenticateJWT, isAdmin, async (req, res) => {
+router.get("/users", authenticateJWT, isAdmin, async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT id, name, email, role, created_at, isrestrict FROM users WHERE role = ?', ['user']);
+    const [rows] = await pool.query(
+      "SELECT id, name, email, role, created_at, isrestrict FROM users WHERE role = ?",
+      ["user"]
+    );
 
-    res.json(rows);  
+    res.json(rows);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-router.post('/signup', async (req, res) => {
-  const { name, email, password } = req.body;
+router.post("/signup", async (req, res) => {
+  const { name, email, password, captcha } = req.body;
 
-    if (!captcha || captcha !== req.session.captcha) {
-    return res.status(400).json({ error: 'Invalid or missing CAPTCHA' });
+  if (!name || !email || !password || !captcha) {
+    return res.status(400).json({ error: "All fields are required" });
   }
 
-  
+  if (!captcha || captcha !== req.session.captcha) {
+    return res.status(400).json({ error: "Invalid or missing CAPTCHA" });
+  }
+
   req.session.captcha = null;
 
+  if (name.length < 3 || name.length > 30) {
+    return res
+      .status(400)
+      .json({ error: "Username must be between 3 and 30 characters" });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: "Invalid email format" });
+  }
+
+  if (password.length < 8) {
+    return res
+      .status(400)
+      .json({ error: "Password must be at least 8 characters long" });
+  }
+
+  const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).+$/;
+  if (!passwordRegex.test(password)) {
+    return res
+      .status(400)
+      .json({
+        error: "Password must include uppercase, lowercase, and a number",
+      });
+  }
+
   try {
-   
+    const [existing] = await pool.query(
+      "SELECT id from users WHERE email = ?",
+      [email]
+    );
+    if (existing.length) {
+      return res.status(400).json({ error: "Email already exists" });
+    }
+
+
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-
     const [result] = await pool.query(
-      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
       [name, email, hashedPassword]
     );
 
-    const user = { id: result.insertId, name, email, role: 'user' };
+    const user = { id: result.insertId, name, email, role: "user" };
 
-    
-    const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '2h' });
+    const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "2h" });
 
     res.status(201).json({ user, token });
   } catch (err) {
-    if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(400).json({ error: 'Email already exists' });
-    }
-
-    console.error('Signup error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Signup error:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post("/login", async (req, res) => {
   const { email, password, captcha } = req.body;
 
-   console.log("Submitted CAPTCHA:", captcha);
-  console.log("Stored session CAPTCHA:", req.session.captcha);
-
+  // console.log("Submitted CAPTCHA:", captcha);
+  // console.log("Stored session CAPTCHA:", req.session.captcha);
 
   if (!captcha || captcha !== req.session.captcha) {
-    return res.status(400).json({ error: 'Invalid or missing CAPTCHA' });
+    return res.status(400).json({ error: "Invalid or missing CAPTCHA" });
   }
 
   req.session.captcha = null;
 
   try {
-    const [user] = await pool.query("SELECT * FROM users WHERE email = ?", [email]);
+    const [user] = await pool.query("SELECT * FROM users WHERE email = ?", [
+      email,
+    ]);
 
     if (!user.length) return res.status(400).json({ error: "User not found" });
 
@@ -87,13 +121,15 @@ router.post('/login', async (req, res) => {
         id: user[0].id,
         name: user[0].name,
         email: user[0].email,
-        role: user[0].role
+        role: user[0].role,
       },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    await pool.query("UPDATE users SET lastLogin = NOW() WHERE id = ?", [user[0].id]);
+    await pool.query("UPDATE users SET lastLogin = NOW() WHERE id = ?", [
+      user[0].id,
+    ]);
 
     res.json({
       message: "Login successful",
@@ -103,19 +139,16 @@ router.post('/login', async (req, res) => {
         name: user[0].name,
         email: user[0].email,
         role: user[0].role,
-        lastLogin: user[0].lastLogin
-      }
+        lastLogin: user[0].lastLogin,
+      },
     });
-
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-
-router.post("/rooms/add", authenticateJWT , isAdmin, async (req, res) => {
-  
+router.post("/rooms/add", authenticateJWT, isAdmin, async (req, res) => {
   res.json({ message: "Room added by admin" });
 });
 
@@ -129,8 +162,15 @@ router.patch("/user", authenticateJWT, async (req, res) => {
   }
 
   try {
-    await pool.query("UPDATE users SET name = ?, email = ? WHERE id = ?", [name, email, userId]);
-    const [updatedUser] = await pool.query("SELECT id, name, email, role, lastLogin FROM users WHERE id = ?", [userId]);
+    await pool.query("UPDATE users SET name = ?, email = ? WHERE id = ?", [
+      name,
+      email,
+      userId,
+    ]);
+    const [updatedUser] = await pool.query(
+      "SELECT id, name, email, role, lastLogin FROM users WHERE id = ?",
+      [userId]
+    );
     res.json({ user: updatedUser[0] });
   } catch (err) {
     if (err.code === "ER_DUP_ENTRY") {
@@ -147,18 +187,26 @@ router.patch("/password", authenticateJWT, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
-    return res.status(400).json({ error: "Both current and new passwords are required" });
+    return res
+      .status(400)
+      .json({ error: "Both current and new passwords are required" });
   }
 
   try {
-    const [rows] = await pool.query("SELECT password FROM users WHERE id = ?", [userId]);
+    const [rows] = await pool.query("SELECT password FROM users WHERE id = ?", [
+      userId,
+    ]);
     if (!rows.length) return res.status(404).json({ error: "User not found" });
 
     const isMatch = await bcrypt.compare(currentPassword, rows[0].password);
-    if (!isMatch) return res.status(400).json({ error: "Current password is incorrect" });
+    if (!isMatch)
+      return res.status(400).json({ error: "Current password is incorrect" });
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await pool.query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, userId]);
+    await pool.query("UPDATE users SET password = ? WHERE id = ?", [
+      hashedPassword,
+      userId,
+    ]);
 
     res.json({ message: "Password updated successfully" });
   } catch (error) {
@@ -167,28 +215,43 @@ router.patch("/password", authenticateJWT, async (req, res) => {
   }
 });
 
+router.patch(
+  "/user/:id/restrict",
+  authenticateJWT,
+  isAdmin,
+  async (req, res) => {
+    const userId = req.params.id;
+    const { isrestrict } = req.body;
 
-router.patch("/user/:id/restrict" , authenticateJWT , isAdmin , async(req,res) => {
-  const userId = req.params.id;
-  const {isrestrict} = req.body;
+    if (typeof isrestrict !== "boolean") {
+      return res.status(400).json({ error: "isrestrict boolean is required" });
+    }
 
-   if (typeof isrestrict !== 'boolean') {
-    return res.status(400).json({ error: 'isrestrict boolean is required' });
+    try {
+      await pool.query("UPDATE users SET isrestrict = ? WHERE id = ?", [
+        isrestrict,
+        userId,
+      ]);
+      const [updatedUser] = await pool.query(
+        "SELECT id, name, email, isrestrict FROM users WHERE id = ?",
+        [userId]
+      );
+
+      if (!updatedUser.length)
+        return res.status(404).json({ error: "User not found" });
+
+      res.json({
+        user: updatedUser[0],
+        message: `User ${
+          isrestrict ? "restricted" : "unrestricted"
+        } successfully.`,
+      });
+    } catch (error) {
+      console.error("Error updating restrict status:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
-
-  try {
-    await pool.query('UPDATE users SET isrestrict = ? WHERE id = ?', [isrestrict, userId]);
-    const [updatedUser] = await pool.query('SELECT id, name, email, isrestrict FROM users WHERE id = ?', [userId]);
-
-    if (!updatedUser.length) return res.status(404).json({ error: 'User not found' });
-
-    res.json({ user: updatedUser[0], message: `User ${isrestrict ? 'restricted' : 'unrestricted'} successfully.` });
-  } catch (error) {
-    console.error('Error updating restrict status:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
+);
 
 // DELETE /user - Delete user with password verification (already provided)
 router.delete("/user", authenticateJWT, async (req, res) => {
@@ -196,12 +259,18 @@ router.delete("/user", authenticateJWT, async (req, res) => {
   const { password } = req.body;
 
   if (!password) {
-    return res.status(400).json({ error: "Password is required to delete account." });
+    return res
+      .status(400)
+      .json({ error: "Password is required to delete account." });
   }
 
   try {
-    const [userRows] = await pool.query("SELECT password FROM users WHERE id = ?", [userId]);
-    if (!userRows.length) return res.status(404).json({ error: "User not found." });
+    const [userRows] = await pool.query(
+      "SELECT password FROM users WHERE id = ?",
+      [userId]
+    );
+    if (!userRows.length)
+      return res.status(404).json({ error: "User not found." });
 
     const isMatch = await bcrypt.compare(password, userRows[0].password);
     if (!isMatch) return res.status(400).json({ error: "Incorrect password." });
@@ -213,6 +282,5 @@ router.delete("/user", authenticateJWT, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 export default router;

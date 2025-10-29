@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
-import { format } from "date-fns";
 import "react-datepicker/dist/react-datepicker.css";
 import { Label } from "./ui/label";
 import { Button } from "./ui/Button";
 
-const FilterBar = ({ onApply, initialFromDate, initialToDate }) => {
-  const [fromDate, setFromDate] = useState(initialFromDate);
-  const [toDate, setToDate] = useState(initialToDate);
+const FilterBar = ({ onApply }) => {
+  const defaultFromDate = new Date();
+  defaultFromDate.setDate(1); 
+  const defaultToDate = new Date(); 
+
+  const [fromDate, setFromDate] = useState(defaultFromDate);
+  const [toDate, setToDate] = useState(defaultToDate);
+
+
+  useEffect(() => {
+    onApply(defaultFromDate, defaultToDate);
+  }, []);
 
   const handleReset = () => {
-    const defaultFrom = getDefaultFromDate;
-    const defaultTo = getDefaultToDate;
-
-    setFromDate(defaultFrom);
-    setToDate(defaultTo);
-    onApply(defaultFrom, defaultTo);
+    setFromDate(defaultFromDate);
+    setToDate(defaultToDate);
+    onApply(defaultFromDate, defaultToDate);
   };
 
   const handleApply = () => {

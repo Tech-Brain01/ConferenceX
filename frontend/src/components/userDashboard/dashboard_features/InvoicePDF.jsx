@@ -1,38 +1,53 @@
 import React from "react";
-import {
-  Page,
-  Text,
-  View,
-  Document,
-  StyleSheet,
-  PDFDownloadLink,
-} from "@react-pdf/renderer";
+import { Page, Text, View, Document, StyleSheet, PDFDownloadLink } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 40,
     fontSize: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#f9f9f9",
     color: "#333",
+    fontFamily: "Helvetica",
   },
   title: {
-    fontSize: 22,
+    fontSize: 26,
     textAlign: "center",
-    color: "#2e86de",
+    color: "#1d4ed8",
     marginBottom: 20,
+    fontWeight: "bold",
   },
   section: {
-    marginBottom: 10,
+    marginBottom: 15,
+    padding: 10,
+    borderBottom: "1px solid #e5e7eb",
   },
   bold: { fontWeight: "bold" },
+  headerText: { fontSize: 14, marginBottom: 5 },
   tableHeader: {
     flexDirection: "row",
-    borderBottom: "1px solid #999",
+    borderBottom: "2px solid #9ca3af",
+    paddingBottom: 5,
     marginTop: 10,
+    backgroundColor: "#e0e7ff",
   },
-  tableRow: { flexDirection: "row", marginVertical: 5 },
-  cell: { width: "25%" },
-  footer: { textAlign: "center", marginTop: 20, fontSize: 10 },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 5,
+    borderBottom: "1px solid #e5e7eb",
+  },
+  cell: { width: "25%", fontSize: 12 },
+  totalRow: {
+    flexDirection: "row",
+    paddingVertical: 8,
+    borderTop: "2px solid #9ca3af",
+    fontWeight: "bold",
+  },
+  footer: {
+    textAlign: "center",
+    marginTop: 30,
+    fontSize: 10,
+    color: "#6b7280",
+  },
 });
 
 const InvoiceDocument = ({ invoice }) => (
@@ -42,35 +57,31 @@ const InvoiceDocument = ({ invoice }) => (
 
       {/* Invoice Header */}
       <View style={styles.section}>
-        <Text>
-          <Text style={styles.bold}>Invoice No:</Text> {invoice.invoices_number}
+        <Text style={styles.headerText}>
+          <Text style={styles.bold}>Invoice No:</Text> {invoice.Invoice_no}
         </Text>
-        <Text>
+        <Text style={styles.headerText}>
           <Text style={styles.bold}>Booking Ref:</Text> {invoice.booking_ref}
         </Text>
-        <Text>
+        <Text style={styles.headerText}>
           <Text style={styles.bold}>Issued:</Text>{" "}
-          {new Date(invoice.issue_date).toLocaleDateString()}
+          {new Date(invoice.Issue_date).toLocaleDateString()}
         </Text>
-        <Text>
-          <Text style={styles.bold}>Due:</Text>{" "}
-          {new Date(invoice.due_date).toLocaleDateString()}
-        </Text>
-        <Text>
+        <Text style={styles.headerText}>
           <Text style={styles.bold}>Status:</Text> {invoice.status}
         </Text>
       </View>
 
       {/* User Info */}
       <View style={styles.section}>
-        <Text style={styles.bold}>Billed To:</Text>
+        <Text style={[styles.bold, { marginBottom: 5 }]}>Billed To:</Text>
         <Text>{invoice.user_name}</Text>
         <Text>{invoice.user_email}</Text>
       </View>
 
       {/* Room Info */}
       <View style={styles.section}>
-        <Text style={styles.bold}>Room Details:</Text>
+        <Text style={[styles.bold, { marginBottom: 5 }]}>Room Details:</Text>
         <Text>{invoice.room_name}</Text>
         <Text>Location: {invoice.room_location}</Text>
         <Text>Price: ₹{invoice.room_price}</Text>
@@ -78,7 +89,7 @@ const InvoiceDocument = ({ invoice }) => (
 
       {/* Amount Summary */}
       <View style={styles.section}>
-        <Text style={styles.bold}>Amount Summary</Text>
+        <Text style={[styles.bold, { marginBottom: 5 }]}>Amount Summary</Text>
         <View style={styles.tableHeader}>
           <Text style={[styles.cell, styles.bold]}>Description</Text>
           <Text style={[styles.cell, styles.bold]}>Amount</Text>
@@ -87,9 +98,15 @@ const InvoiceDocument = ({ invoice }) => (
         </View>
         <View style={styles.tableRow}>
           <Text style={styles.cell}>Room Booking</Text>
-          <Text style={styles.cell}>₹{invoice.amount}</Text>
-          <Text style={styles.cell}>₹{invoice.tax}</Text>
-          <Text style={styles.cell}>₹{invoice.total_amount}</Text>
+          <Text style={styles.cell}>₹{invoice.Amt}</Text>
+          <Text style={styles.cell}>₹{invoice.gst}</Text>
+          <Text style={styles.cell}>₹{invoice.Total_Amt}</Text>
+        </View>
+        <View style={styles.totalRow}>
+          <Text style={styles.cell}></Text>
+          <Text style={styles.cell}></Text>
+          <Text style={styles.cell}>Grand Total</Text>
+          <Text style={styles.cell}>₹{invoice.Total_Amt}</Text>
         </View>
       </View>
 
@@ -104,15 +121,15 @@ const InvoiceDocument = ({ invoice }) => (
 const InvoicePDF = ({ invoice }) => (
   <PDFDownloadLink
     document={<InvoiceDocument invoice={invoice} />}
-    fileName={`invoice_${invoice.invoices_number}.pdf`}
+    fileName={`invoice_${invoice.Invoice_no}.pdf`}
     style={{
-      backgroundColor: "#2e86de",
+      backgroundColor: "#1d4ed8",
       color: "white",
-      padding: "6px 12px",
-      borderRadius: "5px",
+      padding: "8px 16px",
+      borderRadius: "6px",
       textDecoration: "none",
       fontWeight: "bold",
-      fontSize: "12px",
+      fontSize: "14px",
     }}
   >
     {({ loading }) => (loading ? "Generating..." : "Download PDF")}

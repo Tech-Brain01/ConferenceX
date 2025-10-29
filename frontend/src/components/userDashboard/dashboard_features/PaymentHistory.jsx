@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
+   Table,
   TableHeader,
+  TableBody,
+  TableHead,
   TableRow,
+  TableCell
 } from "../../ui/table.jsx";
-import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card.jsx";
 import { format, parseISO } from "date-fns";
 import FilterBar from "../../FilterBar.jsx";
 
@@ -31,13 +31,14 @@ function PaymentHistory() {
     setFilterDate({ fromDate, toDate });
   };
 
-  const formatPeriod = (period) => {
-    try {
-      return format(parseISO(period), "MMM dd, yyyy");
-    } catch {
-      return period;
-    }
-  };
+ const formatPeriod = (period) => {
+  try {
+    return format(parseISO(period), "MMM dd, yyyy hh:mm a"); 
+  } catch {
+    return period;
+  }
+};
+
 
   useEffect(() => {
     async function fetchPaymentHistory() {
@@ -67,6 +68,7 @@ function PaymentHistory() {
         if (!res.ok) throw new Error("Failed to fetch payment history");
 
         const result = await res.json();
+        console.log(result);
         setPaymentHistoryData(result);
       } catch (err) {
         console.error(err);
@@ -109,21 +111,30 @@ function PaymentHistory() {
                     <TableHead>Booking_ref</TableHead>
                     <TableHead>transaction_ref</TableHead>
                     <TableHead>Room Name</TableHead>
-                    <TableHead>Amount</TableHead>
+                    <TableHead>Total Amt Paided</TableHead>
                     <TableHead>Method</TableHead>
+                    <TableHead>Payment Made</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {PaymentHistoryData > 0 ? (
-                    PaymentHistoryData.map((pay, idx) => (
+                  {PaymentHistoryData.length > 0 ? (
+                    PaymentHistoryData.map((his, idx) => (
                       <TableRow key={idx}>
                         <TableCell>{idx + 1}</TableCell>
+                        <TableCell>{his.Booking_ref || "N/A"}</TableCell>
+                        <TableCell>{his.Transaction_ref || "N/A"}</TableCell>
+                        <TableCell>{his.room_name || "N/A"}</TableCell>
+                        <TableCell>{his.Total_Amount || "N/A"}</TableCell>
+                        <TableCell>{his.Method || "N/A"}</TableCell>
+                        <TableCell>
+                          {his.Date ? formatPeriod(his.Date) : "N/A"}
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
                       <TableCell
-                        colSpan="5"
+                        colSpan={7}
                         className="text-center py-4 text-gray-500"
                       >
                         No Payment History found.

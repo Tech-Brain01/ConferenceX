@@ -57,7 +57,12 @@ export const getUserFeedbackController = async (req, res) => {
     const fromDate = req.query.from || null;
     const toDate = req.query.to || null;
 
+    console.log("userId:", userId);
+    console.log("from:", fromDate, "to:", toDate);
     const feedbackData = await getAllFeedback(userId, fromDate, toDate);
+    console.log(" result count:", feedbackData.length);
+    console.log(" first record:", feedbackData[0]);
+
     res.json(feedbackData);
   } catch (err) {
     console.error("Error fetching user feedback:", err);
@@ -73,7 +78,8 @@ export const getUserHistoryController = async (req,res) => {
         const toDate = req.query.to || null;
 
         const userHistory = await getUserHistory(userId , fromDate , toDate);
-
+        //  console.log(" result count:", userHistory.length);
+        //  console.log(" first record:", userHistory[0]);
         res.json(userHistory);
 
     } catch (err) {
@@ -88,12 +94,12 @@ export const getUserInvoicesController = async (req, res) => {
     const fromDate = req.query.from || null;
     const toDate = req.query.to || null;
 
-    console.log("🟢 [INVOICE DEBUG] userId:", userId);
-    console.log("🟢 [INVOICE DEBUG] from:", fromDate, "to:", toDate);
+    console.log("[INVOICE DEBUG] userId:", userId);
+    console.log("[INVOICE DEBUG] from:", fromDate, "to:", toDate);
 
     const userInvoices = await getInvoicesByUser(userId, fromDate, toDate);
-    console.log("🟢 [INVOICE DEBUG] result count:", userInvoices.length);
-    console.log("🟢 [INVOICE DEBUG] first record:", userInvoices[0]);
+    console.log(" [INVOICE DEBUG] result count:", userInvoices.length);
+    console.log("[INVOICE DEBUG] first record:", userInvoices[0]);
 
     res.json(userInvoices);
   } catch (err) {

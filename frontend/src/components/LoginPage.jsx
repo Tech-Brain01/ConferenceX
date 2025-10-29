@@ -32,12 +32,38 @@ const LoginPage = ({ onLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+     if (!email.trim()) {
+    toast.error("Email is required");
+    loadCaptcha();
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    toast.error("Invalid email format");
+    loadCaptcha();
+    return;
+  }
+
+  if (!password.trim()) {
+    toast.error("Password is required");
+    loadCaptcha();
+    return;
+  }
+
+  if (!captchaInput.trim()) {
+    toast.error("Please enter the CAPTCHA");
+    loadCaptcha();
+    return;
+  }
+
     try {
       const res = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password ,  captcha: captchaInput, }),
+        body: JSON.stringify({ email, password, captcha: captchaInput }),
       });
 
       const data = await res.json();
@@ -61,11 +87,15 @@ const LoginPage = ({ onLogin }) => {
           toast.error("Your account is restricted and cannot log in.");
         } else {
           toast.error(data.error || "Login failed");
+          loadCaptcha();
+          setCaptchaInput("");
         }
       }
     } catch (error) {
       console.error("Login error:", error);
       toast.error("Network error, please try again later.");
+      loadCaptcha();
+      setCaptchaInput("");
     }
   };
 
@@ -121,7 +151,7 @@ const LoginPage = ({ onLogin }) => {
           </div>
           <div>
             <Label htmlFor="captcha" className="text-sm">
-              Enter CAPTCHA
+              Enter Captcha
             </Label>
             <div
               className="my-2"
@@ -140,7 +170,7 @@ const LoginPage = ({ onLogin }) => {
           <button
             type="button"
             className="text-sm text-cyan-400 hover:underline"
-            onClick={loadCaptcha} 
+            onClick={loadCaptcha}
           >
             Refresh CAPTCHA
           </button>

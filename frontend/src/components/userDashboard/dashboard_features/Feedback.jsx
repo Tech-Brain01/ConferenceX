@@ -44,7 +44,8 @@ function Feedback() {
         const from = format(filterDate.fromDate, "yyyy-MM-dd");
         const to = format(filterDate.toDate, "yyyy-MM-dd");
 
-        let url = `http://localhost:8080/api/user/dashboard/all-feedback?from=${from}&to=${to}`;
+        let url = `http://localhost:8080/api/user/dashboard/all-feedback`;
+             if (from && to) url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
 
         const res = await fetch(url, {
           headers: {
@@ -101,13 +102,13 @@ function Feedback() {
                 </TableHeader>
                 <TableBody>
                   {feedback.length > 0 ? (
-                    feedback.map((fb, index) => (
+                    feedback.map((b, index) => (
                       <TableRow key={index}>
                         <TableCell>{index + 1}</TableCell>
-                        <TableCell>{fb.room_names || "N/A"}</TableCell>
-                        <TableCell>{formatPeriod(fb.period)}</TableCell>
-                        <TableCell>{fb.comments || "N/A"}</TableCell>
-                        <TableCell>{fb.avg_rating?.toFixed(1) || "N/A"}</TableCell>
+                        <TableCell>{b.room_name || "N/A"}</TableCell>
+                        <TableCell>{formatPeriod(b.period)}</TableCell>
+                        <TableCell>{b.feedbacks || "N/A"}</TableCell>
+                        <TableCell>{b.avg_rating || "N/A"}</TableCell>
                       </TableRow>
                     ))
                   ) : (

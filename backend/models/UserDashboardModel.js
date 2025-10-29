@@ -37,8 +37,8 @@ export const getTotalAmountSpend = async (userId, fromDate, toDate) => {
   return rows[0].totalamountspend;
 };
 
-export const getUserBookingTrend = async (userId , fromDate, toDate) => {
- const query = `
+export const getUserBookingTrend = async (userId, fromDate, toDate) => {
+  const query = `
   SELECT
     DATE_FORMAT(b.start_date, '%Y-%m-%d') AS period,
     COUNT(*) AS total_bookings,
@@ -55,8 +55,7 @@ export const getUserBookingTrend = async (userId , fromDate, toDate) => {
   ORDER BY period
 `;
 
-const params = [userId, userId, fromDate, fromDate, toDate, toDate];
-
+  const params = [userId, userId, fromDate, fromDate, toDate, toDate];
 
   const [rows] = await pool.query(query, params);
   return rows;
@@ -65,27 +64,26 @@ const params = [userId, userId, fromDate, fromDate, toDate, toDate];
 
 export const getAllFeedback = async (userId, fromDate, toDate) => {
   let query = `
-    SELECT 
-      DATE(f.created_at) AS period,
-      GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ', ') AS room_names,
-      AVG(f.rating) AS avg_rating,
-      GROUP_CONCAT(f.comment SEPARATOR ' || ') AS comments
-    FROM feedbacks f
-    JOIN bookings b ON f.booking_id = b.id
+    SELECT
+      DATE_FORMAT(b.start_date, '%Y-%m-%d') AS period,
+      r.name AS room_name,
+      AVG(b.rating) AS avg_rating,
+      GROUP_CONCAT(b.feedback SEPARATOR '; ') AS feedbacks
+    FROM bookings b
     JOIN rooms r ON b.room_id = r.id
-    WHERE b.user_id = ?
+    WHERE b.user_id = ? AND b.feedback IS NOT NULL 
   `;
 
   const params = [userId];
 
   if (fromDate && toDate) {
-    query += ` AND DATE(f.created_at) BETWEEN ? AND ? `;
+    query += ` AND b.start_date BETWEEN ? AND ?`;
     params.push(fromDate, toDate);
   }
 
   query += `
-    GROUP BY DATE(f.created_at)
-    ORDER BY period DESC
+    GROUP BY r.id, r.name, period
+    ORDER BY period
   `;
 
   const [rows] = await pool.query(query, params);
@@ -93,58 +91,67 @@ export const getAllFeedback = async (userId, fromDate, toDate) => {
 };
 
 
-export const getUserHistory = async (req,res) => {
-    let query = ``
+export const getUserHistory = async (userId , fromDate , toDate) => {
+  let query = `
+   SELECT
+    b.booking_ref AS Booking_ref,
+    b.transaction_ref AS Transaction_ref,
+    r.name AS room_name,
+    b.total_amount AS Total_Amount,
+    b.payment_method AS Method,
+    b.payment_date AS Date
+   FROM bookings b
+   JOIN rooms r ON b.room_id = r.id
+   WHERE b.user_id = ?
+  AND b.payment_status = 'paid'
+  `;
 
-    const params = []
+  const params = [userId];
 
-    const [rows] = await pool.query(query, params);
-    return rows;
+  if (fromDate && toDate) {
+    query += `AND b.start_date BETWEEN ? AND ?`;
+    params.push(fromDate , toDate);
+  }
+
+  query += `
+  ORDER BY b.payment_date;
+  `
+
+  const [rows] = await pool.query(query, params);
+  return rows;
 };
 
-
-export const getInvoicesByUser = async (userId, from, to) => {
+export const getInvoicesByUser = async (userId, fromDate, toDate) => {
   let query = `
     SELECT 
-      i.*, 
       r.name AS room_name, 
       r.location AS room_location, 
       r.price AS room_price,
       b.booking_ref, 
       b.start_date, 
       b.end_date, 
+      b.invoice_no AS Invoice_no,
+      b.payment_date AS Issue_date,
+      b.amount AS Amt,
+      b.tax AS gst,
+      b.total_amount AS Total_Amt,
+      b.payment_status AS status,
       u.name AS user_name, 
       u.email AS user_email
-    FROM invoices i
-    JOIN bookings b ON i.booking_id = b.id
+    FROM bookings b
     JOIN rooms r ON b.room_id = r.id
     JOIN users u ON b.user_id = u.id
-    WHERE b.user_id = ?
+    WHERE b.user_id = ? AND b.payment_status = "paid"
   `;
   const params = [userId];
 
-  if (from && to) {
-    query += ` AND i.issue_date BETWEEN ? AND ?`;
-    params.push(from, to);
+  if (fromDate && toDate) {
+    query += ` AND b.payment_date BETWEEN ? AND ?`;
+    params.push(fromDate, toDate);
   }
 
-  query += ` ORDER BY i.issue_date DESC`;
+  query += ` ORDER BY b.payment_date DESC`;
 
   const [rows] = await pool.query(query, params);
   return rows;
-};
-
-export const getInvoiceDetail = async (invoiceId, userId) => {
-  const [rows] = await pool.query(
-    `SELECT 
-        i.*, b.booking_ref, b.start_date, b.end_date, 
-        r.name AS room_name, u.name AS user_name, u.email
-     FROM invoices i
-     JOIN bookings b ON i.booking_id = b.id
-     JOIN rooms r ON b.room_id = r.id
-     JOIN users u ON b.user_id = u.id
-     WHERE i.id = ? AND b.user_id = ?`,
-    [invoiceId, userId]
-  );
-  return rows[0];
 };

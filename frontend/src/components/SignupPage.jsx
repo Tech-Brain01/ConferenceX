@@ -34,12 +34,39 @@ const SignupPage = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!name.trim()) {
+      toast.error("Username is required!");
+      loadCaptcha();
+      return;
+    }
+    if (name.length < 3 || name.length > 15) {
+      toast.error("Username must be between 3 and 30 characters ");
+      loadCaptcha();
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Invalid email format");
+      loadCaptcha();
+      return;
+    }
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      loadCaptcha();
+      return;
+    }
+    if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)/.test(password)) {
+      toast.error("Password must contain uppercase, lowercase, and a number");
+      loadCaptcha();
+      return;
+    }
+    if (!captchaInput.trim()) toast.error("Please enter the CAPTCHA");
+
     try {
       const res = await fetch("http://localhost:8080/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, captcha: captchaInput }),
       });
 
       const data = await res.json();
@@ -55,10 +82,15 @@ const SignupPage = ({ onLogin }) => {
         toast.success("Signup successful! You are now logged in.");
         navigate("/rooms");
       } else {
-        toast.error(`${data.error}`);
+        toast.error(data.error || "Signup failed");
+        loadCaptcha();
+        setCaptchaInput("");
       }
     } catch (err) {
       console.error(err);
+      toast.error("An unexpected error occurred");
+      loadCaptcha(); 
+      setCaptchaInput("");
     }
   };
 

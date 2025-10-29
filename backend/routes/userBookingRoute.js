@@ -138,6 +138,7 @@ router.post("/book", authenticateJWT, async (req, res) => {
     const bookingId = result.insertId;
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const bookingRef = `BK${dateStr}-${String(bookingId).padStart(6, "0")}`;
+    
 
     await pool.query(`UPDATE bookings SET booking_ref = ? WHERE id = ?`, [
       bookingRef,
@@ -226,7 +227,7 @@ router.patch("/:id", authenticateJWT, async (req, res) => {
     );
 
     if (!booking) {
-      console.log("❌ Booking not found");
+      console.log(" Booking not found");
       return res.status(404).json({ err: "Booking not found" });
     }
 
@@ -262,7 +263,7 @@ router.patch("/:id", authenticateJWT, async (req, res) => {
     );
 
     if (conflicts.length > 0) {
-      console.log("❌ Conflicting booking found:", conflicts);
+      console.log(" Conflicting booking found:", conflicts);
       return res
         .status(400)
         .json({ err: "Room already booked for selected dates" });
@@ -273,13 +274,13 @@ router.patch("/:id", authenticateJWT, async (req, res) => {
       [start_date, end_date, phone_number, bookingId]
     );
 
-    console.log("✅ Booking updated successfully");
+    console.log(" Booking updated successfully");
     res.json({
       message: "booking updated successfully",
       bookingUpdate: update,
     });
   } catch (err) {
-    console.log("❌ Server error:", err);
+    console.log(" Server error:", err);
     res.status(500).json({ err: "server error" });
   }
 });
