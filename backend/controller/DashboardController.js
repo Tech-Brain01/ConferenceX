@@ -8,7 +8,8 @@ import {
   getCancelledvsApprovedTrend,
   getRevenueTrends,
   getRevenueByRoom,
-  getRevenueLossFromCancellations
+  getRevenueLossFromCancellations,
+  getRevenueByUser
 } from "../models/DashboardModel.js";
 
 export const getDashboardStatsController = async (req, res) => {
@@ -110,7 +111,23 @@ export const getRevenueByRoomController = async (req, res) => {
     const toDate = req.query.to || null;
 
     const revenueByRoom = await getRevenueByRoom(fromDate , toDate);
+    
     res.json(revenueByRoom);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getRevenueByUserController = async (req, res) => {
+  try {
+    
+    const fromDate = req.query.from || null;
+    const toDate = req.query.to || null;
+
+    const revenueByUser = await getRevenueByUser(fromDate , toDate);
+    // console.log(revenueByUser);
+    res.json(revenueByUser);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

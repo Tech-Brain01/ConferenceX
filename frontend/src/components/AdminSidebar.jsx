@@ -10,9 +10,9 @@ import {
   BoltIcon,
   ChartBarIcon,
   HomeIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
 import { Sidebar, SidebarBody, SidebarLink } from "./ui/SideBarUi.jsx";
-import { cn } from "../lib/utils.js";
+
 
 const AdminSidebar = ({ user }) => {
   const [open, setOpen] = useState(true);
@@ -68,7 +68,12 @@ const AdminSidebar = ({ user }) => {
             className="text-xl font-bold text-cyan-400 px-2 py-3 cursor-pointer"
             onClick={handleDashboardLogoClick}
           >
-            {open ? "Admin Panel" : "AP"}
+            {/* {open ? "Admin Panel" : "AP"} */}
+            {user?.name && (
+              <div className="text-sm font-serif  text-amber-400  px-4">
+                Welcome, <strong>{user.name}</strong>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">

@@ -152,9 +152,9 @@ export const DownloadRevenueAnalyticsExcelButton = ({ filterDate }) => {
       a.remove();
       window.URL.revokeObjectURL(downloadUrl);
 
-      console.log("Token:", token);
-      console.log("From:", from, "To:", to);
-      console.log("URL:", url);
+      // console.log("Token:", token);
+      // console.log("From:", from, "To:", to);
+      // console.log("URL:", url);
     } catch (error) {
       console.error("Download failed:", error);
       alert("Failed to download file.");

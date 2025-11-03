@@ -16,6 +16,8 @@ const BookingCard = ({ booking, onEdit, onCancel, onPay }) => {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const bookingEnded = new Date(booking.end_date) <= new Date();
+
   useEffect(() => {
     if (dialogOpen) {
       // Reset form state when dialog opens
@@ -34,7 +36,6 @@ const BookingCard = ({ booking, onEdit, onCancel, onPay }) => {
           day: "numeric",
         });
   };
-
 
   const statusColors = {
     pending:
@@ -172,7 +173,7 @@ const BookingCard = ({ booking, onEdit, onCancel, onPay }) => {
               )}
 
             {/* Feedback Dialog */}
-            {booking.payment_status.toLowerCase() === "paid" && (
+            {booking.payment_status.toLowerCase() === "paid" && bookingEnded && (
               <>
                 {!booking.feedback ? (
                   <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

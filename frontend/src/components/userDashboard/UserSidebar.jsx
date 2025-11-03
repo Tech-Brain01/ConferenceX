@@ -9,7 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Sidebar, SidebarBody, SidebarLink } from "../ui/SideBarUi.jsx";
 
-const UserSidebar = ({ user, logout }) => {
+const UserSidebar = ({ user }) => {
   const [open, setOpen] = useState(true);
   const navigate = useNavigate();
 
@@ -48,7 +48,12 @@ const UserSidebar = ({ user, logout }) => {
             className="text-xl font-bold text-cyan-400 px-2 py-3 cursor-pointer"
             onClick={handleLogoClick}
           >
-            {open ? "User Panel" : "UP"}
+            {/* {open ? "User Panel" : "UP"} */}
+            {user?.name && (
+              <div className="text-sm font-serif  text-amber-400  px-4">
+                Welcome, <strong>{user.name}</strong>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">

@@ -18,6 +18,7 @@ const BookingHistory = ({ bookings = [], onEdit, onCancel, onPay }) => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      
       {filtered.map((b) => (
         <BookingCard
           key={b.id}

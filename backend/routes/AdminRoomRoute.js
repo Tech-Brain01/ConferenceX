@@ -71,7 +71,7 @@ router.get("/:roomId/feedbacks", async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT b.feedback, u.name AS username 
+      `SELECT b.feedback, b.rating ,u.name AS username 
        FROM bookings b
        JOIN users u ON b.user_id = u.id
        WHERE b.room_id = ? AND b.feedback IS NOT NULL AND b.feedback != ''`,

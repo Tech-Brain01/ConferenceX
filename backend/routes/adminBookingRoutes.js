@@ -112,6 +112,10 @@ router.patch(
             .status(409)
             .json({ error: "Date conflict with another approved booking" });
         }
+
+        await pool.query("UPDATE bookings SET status = ? , approved_at = NOW() WHERE id = ?",
+          [status,bookingId]
+        )
       }
 
       if (status == "rejected") {

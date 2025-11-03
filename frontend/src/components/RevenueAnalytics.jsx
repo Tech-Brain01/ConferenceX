@@ -126,6 +126,55 @@ function Revenue_by_room({ data }) {
   );
 }
 
+function Revenue_by_user({ data }) {
+  const RevenueByUserTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const { total_bookings, total_revenue, user_name, booking_refs } =
+        payload[0].payload;
+      return (
+        <div className="bg-white p-3 border rounded shadow-lg max-w-sm text-sm">
+          <p className="font-semibold mb-2">{formatPeriod(label)}</p>
+          <p>
+            <strong>Total Booking:</strong> {total_bookings || "N/A"}
+          </p>
+          <p>
+            <strong>Total Revenue:</strong> {total_revenue || "N/A"}
+          </p>
+          <p>
+            <strong>User Name:</strong> {user_name || "N/A"}
+          </p>
+          <p>
+            <strong>Booking Refs:</strong> {booking_refs || "N/A"}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+  return (
+    <Card className="shadow-lg mb-8 bg-white">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold text-gray-800">
+          Revenue by User
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ left: 50 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis type="number" />
+            <YAxis dataKey="name" type="category" />
+            <Tooltip content={<RevenueByUserTooltip />} />
+            <Bar dataKey="total_revenue" fill="#10b981" />
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+
+
 const Revenue_loss = ({ revenueLoss }) => (
   <Card className="shadow-lg bg-white p-6 text-center">
     <CardTitle className="text-lg font-semibold text-gray-800 mb-2">
@@ -146,10 +195,12 @@ const formatPeriod = (period) => {
 const RevenueAnalytics = () => {
   const [revenueTrendData, setRevenueTrendData] = useState([]);
   const [revenueByRoomData, setRevenueByRoomData] = useState([]);
+  const [revenueByUserData, setRevenueByUserData] = useState([]);
   const [revenueLoss, setRevenueLoss] = useState(0);
 
   const [revenueLoadingTrend, setRevenueLoadingTrend] = useState(false);
   const [roomLoading, setroomLoading] = useState(false);
+  const [userLoading, setUserLoading] = useState(false);
   const [loadingLoss, setLoadingLoss] = useState(false);
 
   const getDefaultFromDate = new Date(
@@ -239,7 +290,7 @@ const RevenueAnalytics = () => {
           },
         });
 
-        if (!res.ok) throw new Error("Failed to fetch booking trends");
+        if (!res.ok) throw new Error("Failed to fetch revenue by room");
         const result = await res.json();
 
         const transformed = result.map((item) => ({
@@ -260,6 +311,55 @@ const RevenueAnalytics = () => {
     }
     fetchRevenueByRoom();
   }, [filterDate]);
+
+   
+     useEffect(() => {
+    async function fetchRevenueByUser() {
+      setUserLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const from = filterDate?.fromDate
+          ? format(filterDate.fromDate, "yyyy-MM-dd")
+          : null;
+        const to = filterDate?.toDate
+          ? format(filterDate.toDate, "yyyy-MM-dd")
+          : null;
+        let url = `http://localhost:8080/api/admin/dashboard/revenue-by-user`;
+        if (from && to)
+          url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
+            to
+          )}`;
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch revenue by user");
+        const result = await res.json();
+         
+              // console.log(result);
+        const transformed = result.map((item) => ({
+          name: item.user_name,
+          total_revenue: item.total_revenue,
+          user_name: item.user_name,
+          booking_refs: item.booking_refs,
+          total_bookings: item.total_bookings,
+        }));
+
+        setRevenueByUserData(transformed);
+      } catch (err) {
+        console.error(err);
+        setRevenueByUserData([]);
+      } finally {
+        setUserLoading(false);
+      }
+    }
+    fetchRevenueByUser();
+  }, [filterDate]);
+ 
 
   useEffect(() => {
     async function fetchRevenueLoss() {
@@ -331,6 +431,14 @@ const RevenueAnalytics = () => {
           </p>
         ) : (
           <Revenue_by_room data={revenueByRoomData} />
+        )}
+
+         {userLoading ? (
+          <p className="text-center text-gray-500">
+            Loading revenue by user...
+          </p>
+        ) : (
+          <Revenue_by_user data={revenueByUserData} />
         )}
 
         {loadingLoss ? (

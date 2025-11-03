@@ -1,36 +1,22 @@
 import { useEffect, useState } from "react";
 import { HoverEffect } from "./ui/CardHover.jsx";
-import { useNavigate } from "react-router-dom";
-import { Badge } from "./ui/badge.jsx";
 import {
   AlertDialog,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogDescription,
-  AlertDialogCancel,
 } from "./ui/alert_dialog.jsx";
 import BookingForm from "./BookingForm.jsx";
 import {
-  XMarkIcon,
-  CheckCircleIcon,
-  XCircleIcon,
   MapPinIcon,
   CurrencyRupeeIcon,
   UserGroupIcon,
-  CalendarIcon,
   Cog6ToothIcon,
+  PaperAirplaneIcon,
+  ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableFooter,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableCaption,
-} from "./ui/table.jsx";
+import { Table, TableBody, TableRow, TableCell } from "./ui/table.jsx";
 
 const RoomList = () => {
   const [rooms, setRooms] = useState([]);
@@ -43,8 +29,6 @@ const RoomList = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [roomFeedbacks, setRoomFeedbacks] = useState([]);
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchRooms() {
@@ -74,14 +58,6 @@ const RoomList = () => {
       return false;
     }
 
-    // Available from filter - compare with dynamic_available_from
-    if (
-      filters.available_from &&
-      new Date(room.dynamic_available_from) > new Date(filters.available_from)
-    ) {
-      return false;
-    }
-
     // Feature filter
     if (
       filters.feature &&
@@ -95,38 +71,13 @@ const RoomList = () => {
     return true;
   });
 
-  const formatDateForDisplay = (dateString) => {
-    const d = new Date(dateString);
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const yyyy = d.getFullYear();
-    return `${dd}-${mm}-${yyyy}`;
-  };
-
   const roomItems = filterRooms.map((room) => {
-    const now = new Date();
-    const availableFrom = new Date(room.dynamic_available_from);
-    const isAvailable = availableFrom <= now;
-
     return {
       title: room.name,
       image: `http://localhost:8080/uploads/${room.image}`,
       description: (
         <div className="space-y-2 text-sm text-neutral-300">
           <div className="flex items-center justify-center">
-            {/* <Badge
-              variant={isAvailable ? "secondary" : "destructive"}
-              className="flex items-center gap-2"
-            >
-              <span
-                className={`h-3 w-3 rounded-full ${
-                  isAvailable ? "bg-green-500" : "bg-red-500"
-                }`}
-              ></span>
-              {isAvailable ? "Available" : "Not Available"}
-            </Badge> */}
-
-            {/* Price */}
             <span className="text-green-400 font-semibold text-sm">
               ₹{Number(room.price).toFixed(2)}/Day
             </span>
@@ -140,15 +91,6 @@ const RoomList = () => {
                 </TableCell>
                 <TableCell className="text-left">{room.capacity}</TableCell>
               </TableRow>
-              {/* <TableRow className="border-b-0">
-                <TableCell className="font-semibold text-cyan-400 flex">
-                  <span className="flex-grow text-left">Available from</span>
-                  <span className="w-4 text-left px-2">:</span>
-                </TableCell>
-                <TableCell className="text-left">
-                  {formatDateForDisplay(room.dynamic_available_from)}
-                </TableCell>
-              </TableRow> */}
               <TableRow className="border-b-0">
                 <TableCell className="font-semibold text-cyan-400 flex">
                   <span className="flex-grow text-left">Features List</span>
@@ -168,9 +110,22 @@ const RoomList = () => {
                   <span className="w-4 text-left px-2">:</span>
                 </TableCell>
                 <TableCell className="text-left">
-                  {room.location || "N/A"}
+                  {room?.location
+                    ? Array.isArray(room.location)
+                      ? room.location.length <= 2
+                        ? room.location.join(", ")
+                        : room.location.slice(0, 2).join(", ") + ", ..."
+                      : (() => {
+                          const parts = room.location.split(",");
+                          return (
+                            parts.slice(0, 2).join(", ") +
+                            (parts.length > 2 ? ", ..." : "")
+                          );
+                        })()
+                    : "None"}
                 </TableCell>
               </TableRow>
+
               <TableRow className="border-b-0">
                 <TableCell className="font-semibold text-cyan-400 flex">
                   <span className="flex-grow text-left">Price of Room</span>
@@ -206,30 +161,39 @@ const RoomList = () => {
           <AlertDialogHeader className="flex justify-between items-center border-b border-gray-200  pb-3">
             <AlertDialogTitle className="text-2xl font-semibold flex items-center gap-2 text-gray-900 ">
               {selectedRoom?.name || "Room Details"}
-              {selectedRoom &&
-                (selectedRoom.dynamic_available_from <=
-                new Date().toISOString() ? (
-                  <CheckCircleIcon
-                    className="w-6 h-6 text-green-500"
-                    title="Available"
-                  />
-                ) : (
-                  <XCircleIcon
-                    className="w-6 h-6 text-red-500"
-                    title="Not Available"
-                  />
-                ))}
             </AlertDialogTitle>
-            <button
-              onClick={() => setDialogOpen(false)}
-              aria-label="Close dialog"
-              className="text-gray-500 hover:text-gray-700 "
-            >
-              <span className="flex border rounded-full gap-3 border-cyan-200 items-center justify-center p-1">
-                <p>Back</p>
-                <XMarkIcon className="w-6 h-6" />
-              </span>
-            </button>
+            <div className="flex justify-between items-center relative w-full">
+              <div className="relative group">
+                <button
+                  onClick={() => setDialogOpen(false)}
+                  aria-label="Go Back"
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <span className="flex border rounded-full border-gray-400 items-center justify-center p-1">
+                    <ArrowLeftIcon className="w-6 h-6" />
+                  </span>
+                </button>
+
+                <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                  Back
+                </span>
+              </div>
+
+              <div className="relative group">
+                <button
+                  onClick={() => setBookingOpen(true)}
+                  aria-label="Book Now"
+                  className="text-green-500 hover:text-green-600"
+                >
+                  <span className="flex border rounded-full border-gray-400 items-center justify-center p-1">
+                    <PaperAirplaneIcon className="w-6 h-6" />
+                  </span>
+                </button>
+                <span className="absolute right-10 top-1/2 -translate-y-1/2 bg-green-600 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                  Book Now
+                </span>
+              </div>
+            </div>
           </AlertDialogHeader>
 
           <AlertDialogDescription className="mt-2 text-gray-700 ">
@@ -251,15 +215,6 @@ const RoomList = () => {
                       <strong>Capacity:</strong> {selectedRoom.capacity}
                     </span>
                   </div>
-                  {/* <div className="flex items-center gap-2">
-                    <CalendarIcon className="w-5 h-5 text-cyan-500" />
-                    <span>
-                      <strong>Available from:</strong>{" "}
-                      {formatDateForDisplay(
-                        selectedRoom.dynamic_available_from
-                      )}
-                    </span>
-                  </div> */}
                   <div className="flex items-center gap-2">
                     <Cog6ToothIcon className="w-5 h-5 text-cyan-500" />
                     <span>
@@ -282,42 +237,52 @@ const RoomList = () => {
                     </span>
                   </div>
                   {roomFeedbacks.length > 0 && (
-                    <div className="mt-4">
+                    <div className="mt-4 grid col-span-2">
                       <h3 className="text-lg font-semibold mb-2 text-gray-800">
                         User Feedback
                       </h3>
                       <ul className="space-y-3">
-                        {roomFeedbacks.map((fb, idx) => (
-                          <li
-                            key={idx}
-                            className="bg-gray-100 p-3 rounded-md shadow text-gray-700"
-                          >
-                            <p className="italic">"{fb.feedback}"</p>
-                            <p className="text-sm text-gray-500 mt-1">
-                              — {fb.username}
-                            </p>
-                          </li>
-                        ))}
+                        {roomFeedbacks.map((fb, idx) => {
+                          const fullStars = Math.floor(fb.rating);
+                          const halfStar = fb.rating % 1 >= 0.5;
+                          const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+
+                          return (
+                            <li
+                              key={idx}
+                              className="bg-gray-100 p-3 rounded-md shadow text-gray-700"
+                            >
+                              <p className="italic">"{fb.feedback}"</p>
+
+                              <p className="flex text-yellow-500 mt-1">
+                                {[...Array(fullStars)].map((_, i) => (
+                                  <span key={`full-${i}`}>★</span>
+                                ))}
+
+                                {halfStar && <span>⯨</span>}
+
+                                {[...Array(emptyStars)].map((_, i) => (
+                                  <span
+                                    key={`empty-${i}`}
+                                    className="text-gray-300"
+                                  >
+                                    ★
+                                  </span>
+                                ))}
+                              </p>
+
+                              <p className="text-sm text-gray-500 mt-1">
+                                — {fb.username}
+                              </p>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   )}
                 </div>
-
-                {/* Book Now Button */}
-                <button
-                  onClick={() => setBookingOpen(true)}
-                  className="mt-6 w-full rounded-lg bg-green-600 px-4 py-2 text-white font-semibold shadow hover:bg-green-700 transition"
-                >
-                  Book Now
-                </button>
               </>
             )}
-          </div>
-
-          <div className="mt-6 flex justify-center">
-            <AlertDialogCancel className="bg-amber-500 hover:bg-amber-700">
-              Close
-            </AlertDialogCancel>
           </div>
         </AlertDialogContent>
       </AlertDialog>

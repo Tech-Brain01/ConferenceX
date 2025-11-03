@@ -1,6 +1,6 @@
 import express from "express";
 import pool from "../models/db.js";
-import { authenticateJWT, isAdmin } from "../middleware/authMiddleware.js";
+import { authenticateJWT } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -74,7 +74,8 @@ router.get("/room/:roomId/booked-dates", async (req, res) => {
 // Create a new booking
 router.post("/book", authenticateJWT, async (req, res) => {
   const userId = req.user.id;
-  const { room_id, start_date, end_date, phone_number } = req.body;
+  const { room_id, start_date, start_time, end_date, end_time, phone_number } =
+    req.body;
 
   try {
     // Check if room exists
@@ -127,18 +128,24 @@ router.post("/book", authenticateJWT, async (req, res) => {
         .json({ error: "Room already booked for selected dates" });
     }
 
-    // Insert booking
     const [result] = await pool.query(
-      `INSERT INTO bookings (user_id, room_id, start_date, end_date, phone_number, status)
-       VALUES (?, ?, ?, ?, ?, 'pending')`,
-      [userId, room_id, start_date, end_date, phone_number]
+      `INSERT INTO bookings (user_id, room_id, start_date, start_time, end_date, end_time, phone_number, status)
+   VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      [
+        userId,
+        room_id,
+        start_date,
+        start_time,
+        end_date,
+        end_time,
+        phone_number,
+      ]
     );
 
     // Generate booking_ref for the booking
     const bookingId = result.insertId;
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const bookingRef = `BK${dateStr}-${String(bookingId).padStart(6, "0")}`;
-    
 
     await pool.query(`UPDATE bookings SET booking_ref = ? WHERE id = ?`, [
       bookingRef,
@@ -291,31 +298,74 @@ router.patch("/:id/payment", authenticateJWT, async (req, res) => {
   const userId = req.user.id;
 
   try {
+    // Fetch booking with room price
     const [[booking]] = await pool.query(
-      `SELECT payment_status FROM bookings WHERE id = ? AND user_id = ? `,
+      `SELECT b.id, b.start_date, b.end_date, b.payment_status, r.price AS room_price
+       FROM bookings b
+       JOIN rooms r ON b.room_id = r.id
+       WHERE b.id = ? AND b.user_id = ?`,
       [bookingId, userId]
     );
 
-    if (!booking) return res.status(404).json({ error: "Booking Not Found" });
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
     if (booking.payment_status === "paid")
       return res.status(400).json({ error: "Booking is already paid" });
 
-    const update = await pool.query(
-      `UPDATE bookings SET payment_status = 'paid' WHERE id = ?`,
-      [bookingId]
+    // Calculate number of days (inclusive of start and end)
+    const start = new Date(booking.start_date);
+    const end = new Date(booking.end_date);
+    const diffTime = end - start;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+
+    // Calculate base amount
+    const baseAmount = parseFloat(booking.room_price) * diffDays;
+
+    // Calculate GST
+    const gstRate = baseAmount <= 7500 ? 0.05 : 0.18;
+    const tax = parseFloat((baseAmount * gstRate).toFixed(2));
+
+    // Generate transaction & invoice numbers
+    const transactionRef = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const invoiceNo = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    // Update booking (do NOT update total_amount)
+    await pool.query(
+      `UPDATE bookings
+       SET payment_status = 'paid',
+           amount = ?,
+           tax = ?,
+           transaction_ref = ?,
+           invoice_no = ?,
+           payment_date = NOW()
+       WHERE id = ?`,
+      [baseAmount, tax, transactionRef, invoiceNo, bookingId]
     );
 
-    res.json({ message: "Payment Successfully done!!", updatePayment: update });
+    // Respond with payment details
+    res.json({
+      message: "Payment successfully done!",
+      paymentDetails: {
+        amount: baseAmount,
+        tax,
+        totalAmount: baseAmount + tax, // auto-calculated in DB
+        transactionRef,
+        invoiceNo,
+        numberOfDays: diffDays
+      }
+    });
+
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ err: "server error" });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
+
+
 
 router.post("/:id/feedback", authenticateJWT, async (req, res) => {
   const bookingId = req.params.id;
   const userId = req.user.id;
-  const { feedback } = req.body;
+  const { feedback, rating } = req.body;
   try {
     const [[booking]] = await pool.query(
       `SELECT * FROM bookings WHERE id = ? AND user_id = ? `,
@@ -324,20 +374,31 @@ router.post("/:id/feedback", authenticateJWT, async (req, res) => {
 
     if (!booking) return res.status(404).json({ mssg: "no booking found" });
     if (booking.payment_status !== "paid") {
+      return res.status(400).json({
+        error: "Feedback can only be submitted for completed bookings",
+      });
+    }
+
+    const today = new Date();
+    if (new Date(booking.end_date) > today) {
       return res
         .status(400)
         .json({
-          error: "Feedback can only be submitted for completed bookings",
+          error: "Feedback can only be submitted after the booking has ended",
         });
     }
+
     if (!feedback || feedback.trim().length === 0) {
       return res.status(400).json({ error: "Feedback cannot be empty" });
     }
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ error: "Rating must be between 1 and 5" });
+    }
 
-    await pool.query(`UPDATE bookings SET feedback = ? WHERE id = ?`, [
-      feedback.trim(),
-      bookingId,
-    ]);
+    await pool.query(
+      `UPDATE bookings SET feedback = ?, rating = ? WHERE id = ?`,
+      [feedback.trim(), rating, bookingId]
+    );
 
     res.json({ message: "Feedback submitted successfully" });
   } catch (err) {

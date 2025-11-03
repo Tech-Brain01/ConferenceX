@@ -5,12 +5,13 @@ import Edit from "./Edit.jsx";
 import { toast } from "sonner";
 
 const DashboardTabs = () => {
-  const [activeTab, setActiveTab] = useState("all");
   const [allBookings, setAllBookings] = useState([]);
+  const [activeTab, setActiveTab] = useState("all");
   const [editingBooking, setEditingBooking] = useState(null);
 
   
 
+  // Fetch bookings
   useEffect(() => {
     async function fetchBookings() {
       const token = localStorage.getItem("token");
@@ -31,11 +32,7 @@ const DashboardTabs = () => {
     fetchBookings();
   }, []);
 
-  const toMySQLDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toISOString().split("T")[0];
-  };
-
+  // Filter by tab type
   const getFilteredBookings = (type) => {
     const now = new Date();
     return allBookings
@@ -47,14 +44,12 @@ const DashboardTabs = () => {
         if (type === "upcoming") {
           return start > now && (status === "pending" || status === "approved");
         }
-
         if (type === "history") {
           return (
             end < now || ["cancelled", "rejected", "completed"].includes(status)
           );
         }
-
-        return true; // all bookings
+        return true; // all
       })
       .sort((a, b) => {
         const dateA = new Date(a.start_date);
@@ -63,6 +58,7 @@ const DashboardTabs = () => {
       });
   };
 
+  // Cancel & Pay handlers
   const handleCancel = async (booking) => {
     if (!window.confirm("Are you sure you want to cancel the booking?")) return;
 
@@ -74,7 +70,6 @@ const DashboardTabs = () => {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
-
       if (!res.ok) throw new Error("Failed to cancel booking");
 
       setAllBookings((prev) =>
@@ -97,7 +92,6 @@ const DashboardTabs = () => {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
-
       if (!res.ok) throw new Error("Payment failed");
 
       setAllBookings((prev) =>
@@ -111,66 +105,51 @@ const DashboardTabs = () => {
     }
   };
 
-  const handleEdit = (booking) => {
-    setEditingBooking(booking);
-  };
+  const handleEdit = (booking) => setEditingBooking(booking);
 
+  const handleSaveEdit = async ({ start_date, end_date, phone_number }) => {
+    if (!editingBooking) return;
+    const formattedStart = new Date(start_date).toISOString().split("T")[0];
+    const formattedEnd = new Date(end_date).toISOString().split("T")[0];
 
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/bookings/${editingBooking.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            start_date: formattedStart,
+            end_date: formattedEnd,
+            phone_number,
+          }),
+        }
+      );
 
-const handleSaveEdit = async ({ start_date, end_date, phone_number }) => {
-  if (!editingBooking) return;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.err || "Edit failed");
 
-  // ✅ Format to YYYY-MM-DD
-  const formattedStart = new Date(start_date).toISOString().split("T")[0];
-  const formattedEnd = new Date(end_date).toISOString().split("T")[0];
-
-  console.log("📤 Sending booking update:");
-  console.log("➡ Booking ID:", editingBooking.id);
-  console.log("➡ start_date:", formattedStart);
-  console.log("➡ end_date:", formattedEnd);
-  console.log("➡ phone_number:", phone_number);
-
-  try {
-    const res = await fetch(
-      `http://localhost:8080/api/bookings/${editingBooking.id}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          start_date: formattedStart,
-          end_date: formattedEnd,
-          phone_number,
-        }),
-      }
-    );
-
-    const responseData = await res.json();
-
-    if (!res.ok) {
-      console.error("❌ Server error response:", responseData);
-      throw new Error(responseData.err || "Edit failed");
+      setAllBookings((prev) =>
+        prev.map((b) =>
+          b.id === editingBooking.id
+            ? {
+                ...b,
+                start_date: formattedStart,
+                end_date: formattedEnd,
+                phone_number,
+              }
+            : b
+        )
+      );
+      toast.success("Booking updated!");
+      setEditingBooking(null);
+    } catch (err) {
+      toast.error(err.message);
     }
-
-    console.log("✅ Server response:", responseData);
-
-    setAllBookings((prev) =>
-      prev.map((b) =>
-        b.id === editingBooking.id
-          ? { ...b, start_date: formattedStart, end_date: formattedEnd, phone_number }
-          : b
-      )
-    );
-    toast.success("Booking updated!");
-    setEditingBooking(null);
-  } catch (err) {
-    console.error("❌ Edit failed:", err.message);
-    toast.error(err.message);
-  }
-};
-
+  };
 
   return (
     <>
@@ -182,7 +161,13 @@ const handleSaveEdit = async ({ start_date, end_date, phone_number }) => {
         />
       )}
 
-      {/* Your tabs component */}
+      {/* Totals Display */}
+
+      <p className="bg-indigo-100 p-2 rounded-lg w-fit">
+        Total bookings: {getFilteredBookings(activeTab).length}
+      </p>
+
+      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-3 w-full max-w-xl mx-auto mb-6">
           <TabsTrigger value="all">All Bookings</TabsTrigger>

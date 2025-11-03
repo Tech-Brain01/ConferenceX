@@ -17,6 +17,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.jsx";
 import { Calendar } from "./ui/calendar.jsx";
 import { ChevronDownIcon } from "lucide-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const BookingForm = ({ onClose, roomId }) => {
   const { user } = useContext(AuthContext);
@@ -29,11 +31,11 @@ const BookingForm = ({ onClose, roomId }) => {
   const [endDate, setEndDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [startDateTime, setStartDateTime] = useState(null);
+  const [endDateTime, setEndDateTime] = useState(null);
 
-  // Store booked dates as a Set of "YYYY-MM-DD" strings for fast lookup
   const [bookedDatesSet, setBookedDatesSet] = useState(new Set());
 
-  // Fetch room details and booked dates when roomId changes
   useEffect(() => {
     async function fetchRoomAndBookedDates() {
       try {
@@ -58,8 +60,8 @@ const BookingForm = ({ onClose, roomId }) => {
           let current = new Date(start_date);
           const last = new Date(end_date);
           while (current <= last) {
-            newBookedDatesSet.add(current.toISOString().split("T")[0]);
-            current.setDate(current.getDate() +1);
+            newBookedDatesSet.add(formatDateLocal(current)); // <-- fix here
+            current.setDate(current.getDate() + 1);
           }
         });
 
@@ -84,16 +86,30 @@ const BookingForm = ({ onClose, roomId }) => {
   if (!room) return <div>Room not found.</div>;
 
   const validateFields = () => {
-    if (!phoneNumber || !startDate || !endDate) {
+    if (!phoneNumber || !startDateTime || !endDateTime) {
       toast.error("Please fill all fields");
       return false;
     }
-    if (new Date(endDate) < new Date(startDate)) {
+    if (new Date(endDateTime) < new Date(startDateTime)) {
       toast.error("End date must be before start date");
       return false;
     }
     return true;
   };
+
+  function formatDateLocal(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function formatTimeLocal(date) {
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    return `${hours}:${minutes}:${seconds}`;
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -101,10 +117,17 @@ const BookingForm = ({ onClose, roomId }) => {
     setConfirmOpen(true);
   };
 
+  function toIST(date) {
+    const offset = 5.5 * 60;
+    return new Date(date.getTime() + offset * 60 * 1000);
+  }
+
   const handleBooking = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
+      const startIST = toIST(startDateTime);
+      const endIST = toIST(endDateTime);
       const res = await fetch("http://localhost:8080/api/bookings/book", {
         method: "POST",
         headers: {
@@ -114,13 +137,16 @@ const BookingForm = ({ onClose, roomId }) => {
         body: JSON.stringify({
           user_id: user.id,
           room_id: room.id,
-          start_date: startDate.split("T")[0],
-          end_date: endDate.split("T")[0],
+          start_date: formatDateLocal(startIST),
+          start_time: formatTimeLocal(startIST),
+          end_date: formatDateLocal(endIST),
+          end_time: formatTimeLocal(endIST),
           phone_number: phoneNumber,
         }),
       });
 
       const data = await res.json();
+      console.log(data);
 
       if (res.ok) {
         toast.success("Booking request sended!");
@@ -137,47 +163,39 @@ const BookingForm = ({ onClose, roomId }) => {
     }
   };
 
-  function formatDateForDisplay(dateString) {
-    const date = new Date(dateString);
-    if (isNaN(date)) return "";
-    return date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  }
+  // function formatDateForDisplay(dateString) {
+  //   const date = new Date(dateString);
+  //   if (isNaN(date)) return "";
+  //   return date.toLocaleDateString("en-GB", {
+  //     day: "numeric",
+  //     month: "short",
+  //     year: "numeric",
+  //   });
+  // }
 
+  // const renderDay = (date) => {
+  //   const dateStr = date.toISOString().split("T")[0];
+  //   const isBooked = bookedDatesSet.has(dateStr);
 
-  const renderDay = (date) => {
-    const dateStr = date.toISOString().split("T")[0];
-    const isBooked = bookedDatesSet.has(dateStr);
-
-    return (
-      <div
-        style={{
-          width: "2rem",
-          height: "2rem",
-          lineHeight: "2rem",
-          borderRadius: "0.375rem",
-          textAlign: "center",
-          cursor: isBooked ? "not-allowed" : "pointer",
-          backgroundColor: isBooked ? "#F87171" : "#34D399",
-          color: "white",
-          border: "1px solid black",
-          opacity: isBooked ? 0.6 : 1,
-        }}
-      >
-        {date.getDate()}
-      </div>
-    );
-  };
-
-  function formatDateToLocalISO(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
+  //   return (
+  //     <div
+  //       style={{
+  //         width: "2rem",
+  //         height: "2rem",
+  //         lineHeight: "2rem",
+  //         borderRadius: "0.375rem",
+  //         textAlign: "center",
+  //         cursor: isBooked ? "not-allowed" : "pointer",
+  //         backgroundColor: isBooked ? "#F87171" : "#34D399",
+  //         color: "white",
+  //         border: "1px solid black",
+  //         opacity: isBooked ? 0.6 : 1,
+  //       }}
+  //     >
+  //       {date.getDate()}
+  //     </div>
+  //   );
+  // };
 
   return (
     <>
@@ -230,7 +248,7 @@ const BookingForm = ({ onClose, roomId }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="start_date">From Date</Label>
                   <Popover>
@@ -314,28 +332,30 @@ const BookingForm = ({ onClose, roomId }) => {
                           }
                         }}
                         disabled={(date) => {
-  if (!startDate) return true;
+                          if (!startDate) return true;
 
-  const dateStr = date.toISOString().split("T")[0];
-  const startDateStr = new Date(startDate).toISOString().split("T")[0];
+                          const dateStr = date.toISOString().split("T")[0];
+                          const startDateStr = new Date(startDate)
+                            .toISOString()
+                            .split("T")[0];
 
-  const isBeforeStart = new Date(dateStr) < new Date(startDateStr); // allow same-day
-  const isBooked = bookedDatesSet.has(dateStr);
+                          const isBeforeStart =
+                            new Date(dateStr) < new Date(startDateStr);
+                          const isBooked = bookedDatesSet.has(dateStr);
 
-  const shouldDisable = isBeforeStart || isBooked;
+                          const shouldDisable = isBeforeStart || isBooked;
 
-  console.log(
-    "🔍 Disabled check for date:",
-    dateStr,
-    "startDate:",
-    startDateStr,
-    "disabled:",
-    shouldDisable
-  );
+                          console.log(
+                            "🔍 Disabled check for date:",
+                            dateStr,
+                            "startDate:",
+                            startDateStr,
+                            "disabled:",
+                            shouldDisable
+                          );
 
-  return shouldDisable;
-}}
-
+                          return shouldDisable;
+                        }}
                         dayContent={renderDay}
                         className="
                                        bg-white text-black rounded-lg
@@ -350,9 +370,74 @@ const BookingForm = ({ onClose, roomId }) => {
                     </PopoverContent>
                   </Popover>
                 </div>
+              </div> */}
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2">
+                  <Label className="text-black font-medium">
+                    Start Date & Time
+                  </Label>
+                  <DatePicker
+                    selected={startDateTime ? new Date(startDateTime) : null}
+                    onChange={(date) => {
+                      if (!date) return;
+                      setStartDateTime(date);
+                    }}
+                    showTimeSelect
+                    timeIntervals={15}
+                    timeFormat="HH:mm"
+                    dateFormat="dd MMM yyyy, HH:mm"
+                    placeholderText="Select start date and time"
+                    minDate={new Date()}
+                    excludeDates={[...bookedDatesSet].map((d) => {
+                      const parts = d.split("-");
+                      return new Date(parts[0], parts[1] - 1, parts[2]);
+                    })}
+                    shouldCloseOnSelect={true}
+                    className="w-full border border-cyan-500 rounded-md px-4 py-2 shadow-sm 
+                     text-cyan-700 font-medium focus:ring-2 focus:ring-cyan-400
+                     focus:outline-none hover:border-cyan-600"
+                    popperPlacement="bottom"
+                  />
+                </div>
+
+                {/* End Date & Time */}
+                <div className="flex flex-col gap-2">
+                  <Label className="text-black font-medium">
+                    End Date & Time
+                  </Label>
+                  <DatePicker
+                    selected={endDateTime ? new Date(endDateTime) : null}
+                    onChange={(date) => setEndDateTime(date)}
+                    showTimeSelect
+                    timeIntervals={1}
+                    timeFormat="HH:mm"
+                    dateFormat="dd MMM yyyy, HH:mm"
+                    placeholderText="Select end date and time"
+                    minDate={
+                      startDateTime ? new Date(startDateTime) : new Date()
+                    }
+                    excludeDates={[...bookedDatesSet].map((d) => {
+                      const parts = d.split("-");
+                      return new Date(parts[0], parts[1] - 1, parts[2]);
+                    })}
+                    shouldCloseOnSelect={true}
+                    className="w-full border border-cyan-500 rounded-md px-4 py-2 shadow-sm 
+                 text-cyan-700 font-medium focus:ring-2 focus:ring-cyan-400
+                 focus:outline-none hover:border-cyan-600"
+                    popperPlacement="bottom"
+                    //                     renderDayContents={(day, date) => {
+                    //   const dateStr = date.toISOString().split("T")[0];
+                    //   if (bookedDatesSet.has(dateStr)) {
+                    //     return <span title="Booked" style={{ color: "red" }}>{day}</span>;
+                    //   }
+                    //   return day;
+                    // }}
+                  />
+                </div>
               </div>
 
-              <AlertDialogFooter className="pt-4 flex justify-end gap-3">
+              <AlertDialogFooter className="flex justify-center sm:justify-center flex-row gap-8">
                 <Button
                   type="button"
                   className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"

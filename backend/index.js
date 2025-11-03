@@ -11,6 +11,9 @@ import dashboardRoutes from "./routes/DashboardRoute.js";
 import session from 'express-session';
 import svgCaptcha from 'svg-captcha';
 import userDashboardRoutes from "./routes/UserDashboardRoute.js";
+import "./cron/bookingMonitor.js";
+
+
 
 dotenv.config();
 const  app = express();
