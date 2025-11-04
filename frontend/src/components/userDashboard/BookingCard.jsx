@@ -198,8 +198,13 @@ const BookingCard = ({ booking, onEdit, onCancel, onPay }) => {
                         <form
                           onSubmit={async (e) => {
                             e.preventDefault();
+
                             if (!feedbackText.trim())
                               return toast.error("Feedback cannot be empty");
+                            if (!rating || rating < 1 || rating > 5)
+                              return toast.error(
+                                "Please select a rating from 1 to 5"
+                              );
 
                             try {
                               const res = await fetch(
@@ -214,6 +219,7 @@ const BookingCard = ({ booking, onEdit, onCancel, onPay }) => {
                                   },
                                   body: JSON.stringify({
                                     feedback: feedbackText,
+                                    rating: rating, // <-- send rating
                                   }),
                                 }
                               );

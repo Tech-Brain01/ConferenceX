@@ -72,7 +72,8 @@ export const getUserFeedbackController = async (req, res) => {
 
 export const submitUserFeedbackController = async (req, res) => {
   try {
-    
+    const userId = req.query.id;
+    const {feedback , rating} = req.body;
   } catch (err) {
     console.error("Error submitting user feedback:", err);
     res.status(500).json({message: "Internal Server Error" });

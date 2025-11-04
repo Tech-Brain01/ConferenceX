@@ -149,7 +149,7 @@ const BookingForm = ({ onClose, roomId }) => {
       console.log(data);
 
       if (res.ok) {
-        toast.success("Booking request sended!");
+        toast.success("Booking request sent!");
         setConfirmOpen(false);
         onClose();
       } else {

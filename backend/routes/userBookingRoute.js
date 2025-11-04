@@ -297,7 +297,6 @@ router.patch("/:id/payment", authenticateJWT, async (req, res) => {
   const bookingId = req.params.id;
   const userId = req.user.id;
 
-
   try {
     // Fetch booking with room price
     const [[booking]] = await pool.query(
@@ -312,14 +311,12 @@ router.patch("/:id/payment", authenticateJWT, async (req, res) => {
     if (booking.payment_status === "paid")
       return res.status(400).json({ error: "Booking is already paid" });
 
-
     const start = new Date(booking.start_date);
     const end = new Date(booking.end_date);
     const diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
     const baseAmount = parseFloat(booking.room_price) * diffDays;
 
-   
     const gstRate = baseAmount <= 7500 ? 0.05 : 0.18;
     const tax = parseFloat((baseAmount * gstRate).toFixed(2));
 
@@ -387,11 +384,13 @@ router.post("/:id/feedback", authenticateJWT, async (req, res) => {
     if (rating < 1 || rating > 5) {
       return res.status(400).json({ error: "Rating must be between 1 and 5" });
     }
+    console.log({ feedback: feedback.trim(), rating, bookingId });
 
-    await pool.query(
+    const [result] = await pool.query(
       `UPDATE bookings SET feedback = ?, rating = ? WHERE id = ?`,
       [feedback.trim(), rating, bookingId]
     );
+    console.log("Rows affected:", result.affectedRows);
 
     res.json({ message: "Feedback submitted successfully" });
   } catch (err) {
