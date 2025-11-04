@@ -10,11 +10,13 @@ import {
   DialogTrigger,
 } from "../ui/dialog.jsx";
 import { toast } from "sonner";
+import Rating from "./Rating.jsx";
 
 const BookingCard = ({ booking, onEdit, onCancel, onPay }) => {
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [rating, setRating] = useState(0);
 
   const bookingEnded = new Date(booking.end_date) <= new Date();
 
@@ -173,105 +175,112 @@ const BookingCard = ({ booking, onEdit, onCancel, onPay }) => {
               )}
 
             {/* Feedback Dialog */}
-            {booking.payment_status.toLowerCase() === "paid" && bookingEnded && (
-              <>
-                {!booking.feedback ? (
-                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
-                      <button className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-1 rounded-full text-sm font-medium shadow transition">
-                        💬 Feedback
-                      </button>
-                    </DialogTrigger>
+            {booking.payment_status.toLowerCase() === "paid" &&
+              bookingEnded && (
+                <>
+                  {!booking.feedback ? (
+                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                      <DialogTrigger asChild>
+                        <button className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-1 rounded-full text-sm font-medium shadow transition">
+                          💬 Feedback
+                        </button>
+                      </DialogTrigger>
 
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Leave Feedback</DialogTitle>
-                        <DialogDescription>
-                          Please share your experience with this booking. Your
-                          feedback helps us improve.
-                        </DialogDescription>
-                      </DialogHeader>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Leave Feedback</DialogTitle>
+                          <DialogDescription>
+                            Please share your experience with this booking. Your
+                            feedback helps us improve.
+                          </DialogDescription>
+                        </DialogHeader>
 
-                      <form
-                        onSubmit={async (e) => {
-                          e.preventDefault();
-                          if (!feedbackText.trim())
-                            return toast.error("Feedback cannot be empty");
+                        <form
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            if (!feedbackText.trim())
+                              return toast.error("Feedback cannot be empty");
 
-                          try {
-                            const res = await fetch(
-                              `http://localhost:8080/api/bookings/${booking.id}/feedback`,
-                              {
-                                method: "POST",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                  Authorization: `Bearer ${localStorage.getItem(
-                                    "token"
-                                  )}`,
-                                },
-                                body: JSON.stringify({
-                                  feedback: feedbackText,
-                                }),
-                              }
-                            );
-
-                            const data = await res.json();
-                            if (!res.ok)
-                              return toast.error(
-                                data.error || "Failed to submit feedback"
+                            try {
+                              const res = await fetch(
+                                `http://localhost:8080/api/bookings/${booking.id}/feedback`,
+                                {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${localStorage.getItem(
+                                      "token"
+                                    )}`,
+                                  },
+                                  body: JSON.stringify({
+                                    feedback: feedbackText,
+                                  }),
+                                }
                               );
 
-                            toast.success("Feedback submitted successfully!");
-                            setFeedbackSubmitted(true);
-                            setFeedbackText("");
-                          } catch (err) {
-                            console.error(err);
-                            toast.error(
-                              "An error occurred while submitting feedback"
-                            );
-                          }
-                        }}
-                        className="flex flex-col gap-4 mt-4"
-                      >
-                        <textarea
-                          rows={4}
-                          className="w-full border rounded-lg px-3 py-2 text-sm"
-                          placeholder="Write your feedback here..."
-                          value={feedbackText}
-                          onChange={(e) => setFeedbackText(e.target.value)}
-                          disabled={feedbackSubmitted}
-                        />
+                              const data = await res.json();
+                              if (!res.ok)
+                                return toast.error(
+                                  data.error || "Failed to submit feedback"
+                                );
 
-                        <DialogFooter>
-                          {!feedbackSubmitted && (
-                            <button
-                              type="submit"
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm"
-                            >
-                              Submit Feedback
-                            </button>
+                              toast.success("Feedback submitted successfully!");
+                              setFeedbackSubmitted(true);
+                              setFeedbackText("");
+                            } catch (err) {
+                              console.error(err);
+                              toast.error(
+                                "An error occurred while submitting feedback"
+                              );
+                            }
+                          }}
+                          className="flex flex-col gap-4 mt-4"
+                        >
+                          <Rating
+                            rating={rating}
+                            setRating={setRating}
+                            size={32}
+                          />
+
+                          <textarea
+                            rows={4}
+                            className="w-full border rounded-lg px-3 py-2 text-sm"
+                            placeholder="Write your feedback here..."
+                            value={feedbackText}
+                            onChange={(e) => setFeedbackText(e.target.value)}
+                            disabled={feedbackSubmitted}
+                          />
+
+                          <DialogFooter>
+                            {!feedbackSubmitted && (
+                              <button
+                                type="submit"
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm"
+                              >
+                                Submit Feedback
+                              </button>
+                            )}
+                          </DialogFooter>
+
+                          {feedbackSubmitted && (
+                            <p className="text-green-600 text-sm font-medium">
+                              ✅ Thank you for your feedback!
+                            </p>
                           )}
-                        </DialogFooter>
-
-                        {feedbackSubmitted && (
-                          <p className="text-green-600 text-sm font-medium">
-                            ✅ Thank you for your feedback!
-                          </p>
-                        )}
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                ) : (
-                  <button
-                    disabled
-                    className="bg-gray-400 cursor-not-allowed text-white px-4 py-1 rounded-full text-sm font-medium shadow transition"
-                    title="Feedback already submitted"
-                  >
-                    ✅ Feedback submitted
-                  </button>
-                )}
-              </>
-            )}
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  ) : (
+                    <button
+                      disabled
+                      className="bg-gray-400 cursor-not-allowed text-white px-4 py-1 rounded-full text-sm font-medium shadow transition"
+                      title="Feedback already submitted"
+                    >
+                      ✅ Feedback submitted
+                    </button>
+                  )}
+                </>
+              )}
           </div>
         </div>
       </BackgroundGradient>

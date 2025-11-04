@@ -18,14 +18,16 @@ export const getTotalUserBookings = async (userId, fromDate, toDate) => {
 };
 
 export const getTotalAmountSpend = async (userId, fromDate, toDate) => {
-  let query = `
-    SELECT IFNULL(SUM(
-      r.price * (DATEDIFF(b.end_date, b.start_date) + 1)
-    ), 0) AS totalamountspend
-    FROM bookings b
-    JOIN rooms r ON b.room_id = r.id
-    WHERE b.user_id = ? AND b.status = 'approved' AND b.payment_status = 'paid'
-  `;
+ let query = `
+  SELECT 
+    COALESCE(SUM(b.total_amount), 0) AS totalamountspend
+  FROM bookings b
+  JOIN rooms r ON b.room_id = r.id
+  WHERE b.user_id = ? 
+    AND b.status = 'approved' 
+    AND b.payment_status = 'paid'
+`;
+
   const params = [userId];
 
   if (fromDate && toDate) {
@@ -61,7 +63,6 @@ export const getUserBookingTrend = async (userId, fromDate, toDate) => {
   return rows;
 };
 
-
 export const getAllFeedback = async (userId, fromDate, toDate) => {
   let query = `
     SELECT
@@ -89,7 +90,6 @@ export const getAllFeedback = async (userId, fromDate, toDate) => {
   const [rows] = await pool.query(query, params);
   return rows;
 };
-
 
 export const getUserHistory = async (userId , fromDate , toDate) => {
   let query = `
@@ -145,9 +145,9 @@ export const getInvoicesByUser = async (userId, fromDate, toDate) => {
   `;
   const params = [userId];
 
-  if (fromDate && toDate) {
-    query += ` AND b.payment_date BETWEEN ? AND ?`;
-    params.push(fromDate, toDate);
+if (fromDate && toDate) {
+    query += `AND b.start_date BETWEEN ? AND ?`;
+    params.push(fromDate , toDate);
   }
 
   query += ` ORDER BY b.payment_date DESC`;

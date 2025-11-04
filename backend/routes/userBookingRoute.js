@@ -104,9 +104,9 @@ router.post("/book", authenticateJWT, async (req, res) => {
     // Check for overlapping bookings
     const [existingBookings] = await pool.query(
       `SELECT * FROM bookings
-   WHERE room_id = ?
-     AND status != 'cancelled' AND status != 'rejected'
-     AND (
+      WHERE room_id = ?
+      AND status != 'cancelled' AND status != 'rejected'
+      AND (
        (start_date <= ? AND end_date >= ?)
        OR (start_date <= ? AND end_date >= ?)
        OR (start_date >= ? AND end_date <= ?)
@@ -297,6 +297,7 @@ router.patch("/:id/payment", authenticateJWT, async (req, res) => {
   const bookingId = req.params.id;
   const userId = req.user.id;
 
+
   try {
     // Fetch booking with room price
     const [[booking]] = await pool.query(
@@ -311,24 +312,22 @@ router.patch("/:id/payment", authenticateJWT, async (req, res) => {
     if (booking.payment_status === "paid")
       return res.status(400).json({ error: "Booking is already paid" });
 
-    // Calculate number of days (inclusive of start and end)
+
     const start = new Date(booking.start_date);
     const end = new Date(booking.end_date);
-    const diffTime = end - start;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+    const diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-    // Calculate base amount
     const baseAmount = parseFloat(booking.room_price) * diffDays;
 
-    // Calculate GST
+   
     const gstRate = baseAmount <= 7500 ? 0.05 : 0.18;
     const tax = parseFloat((baseAmount * gstRate).toFixed(2));
 
-    // Generate transaction & invoice numbers
-    const transactionRef = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const transactionRef = `TXN-${Date.now()}-${Math.floor(
+      Math.random() * 1000
+    )}`;
     const invoiceNo = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    // Update booking (do NOT update total_amount)
     await pool.query(
       `UPDATE bookings
        SET payment_status = 'paid',
@@ -341,26 +340,22 @@ router.patch("/:id/payment", authenticateJWT, async (req, res) => {
       [baseAmount, tax, transactionRef, invoiceNo, bookingId]
     );
 
-    // Respond with payment details
     res.json({
       message: "Payment successfully done!",
       paymentDetails: {
         amount: baseAmount,
         tax,
-        totalAmount: baseAmount + tax, // auto-calculated in DB
+        totalAmount: baseAmount + tax,
         transactionRef,
         invoiceNo,
-        numberOfDays: diffDays
-      }
+        numberOfDays: diffDays,
+      },
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
-
-
 
 router.post("/:id/feedback", authenticateJWT, async (req, res) => {
   const bookingId = req.params.id;
@@ -381,11 +376,9 @@ router.post("/:id/feedback", authenticateJWT, async (req, res) => {
 
     const today = new Date();
     if (new Date(booking.end_date) > today) {
-      return res
-        .status(400)
-        .json({
-          error: "Feedback can only be submitted after the booking has ended",
-        });
+      return res.status(400).json({
+        error: "Feedback can only be submitted after the booking has ended",
+      });
     }
 
     if (!feedback || feedback.trim().length === 0) {

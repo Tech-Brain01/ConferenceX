@@ -14,9 +14,8 @@ export const getTotalBookings = async (fromDate, toDate) => {
 };
 
 export const getTotalRevenue = async (fromDate, toDate) => {
-  let query = `SELECT IFNULL(SUM(
-        r.price * (DATEDIFF(b.end_date, b.start_date) + 1)
-      ), 0) AS totalrevenue
+  let query = `SELECT
+    COALESCE(SUM(b.total_amount), 0) AS totalrevenue
      FROM bookings b
      JOIN rooms r ON b.room_id = r.id
      WHERE b.status = 'approved' AND b.payment_status = 'paid'`;
@@ -152,7 +151,7 @@ export const getRevenueTrends = async (fromDate, toDate) => {
       SELECT DATE(start_date) AS period,
        DATE(end_date) AS end_period, 
        COUNT(DISTINCT b.id) AS total_bookings,
-       IFNULL(SUM(r.price * (DATEDIFF(b.end_date, b.start_date) + 1)), 0) AS totalrevenue,
+       COALESCE(SUM(b.total_amount), 0) AS totalrevenue,
        GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ', ') AS room_names,
        COUNT(DISTINCT r.id) AS total_rooms
 FROM bookings b
@@ -176,7 +175,7 @@ export const getRevenueByRoom = async (fromDate, toDate) => {
   GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS user_names,
   GROUP_CONCAT(DISTINCT b.booking_ref ORDER BY b.booking_ref SEPARATOR ', ') AS booking_refs,
   r.name AS room_name, 
-  IFNULL(SUM(r.price * (DATEDIFF(b.end_date, b.start_date) + 1)), 0) AS totalrevenue
+  COALESCE(SUM(b.total_amount), 0) AS totalrevenue
 FROM rooms r
 LEFT JOIN bookings b 
   ON r.id = b.room_id 
@@ -201,7 +200,7 @@ SELECT
     u.name AS user_name,
     COUNT(b.id) AS total_bookings,
     GROUP_CONCAT(DISTINCT b.booking_ref ORDER BY b.booking_ref SEPARATOR ', ') AS booking_refs,
-    IFNULL(SUM(r.price * (DATEDIFF(b.end_date, b.start_date) + 1)), 0) AS total_revenue
+    COALESCE(SUM(b.total_amount), 0) AS total_revenue
 FROM users u
 LEFT JOIN bookings b 
     ON u.id = b.user_id

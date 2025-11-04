@@ -1,0 +1,14 @@
+"id";"name";"email";"password";"role";"created_at";"updated_at";"avatar_url";"lastLogin";"isrestrict"
+2;"adminuser3";"admin@example.com";"$2b$10$hQHZQGGkzmdHiQYxZOX3DuRKp7bngRqJ8d03qpm1tb.BAmjqYPPtm";"admin";"2025-09-04 14:56:19";"2025-11-04 11:10:53";"";"2025-11-04 11:10:53";0
+19;"amrendera";"at@gmail.com";"$2b$10$aXNC53WRPdVz1Bl6vdivluUbYBwchldSKvRAcfkxKvIJ/wRn4ehpC";"user";"2025-09-05 10:49:42";"2025-09-05 10:49:42";"";"";0
+20;"aryan";"ast@gmail.com";"$2b$10$2bIdqaGEzaJEEUrhogsR5uMd9Dn75oprxdjvWMslX1QVRukjrskOa";"user";"2025-09-05 14:32:13";"2025-11-04 12:19:32";"";"2025-11-04 12:19:32";0
+21;"aa";"aa@gmail.com";"$2b$10$uY7PY0yxW6Pjw0AMEHahPeiDksF1SYojivQ7hXI1Szq5D45ODTZKu";"user";"2025-09-10 15:52:53";"2025-09-24 17:55:14";"";"";0
+25;"shyam";"sh@gmail.com";"$2b$10$v9dNG8sq7tcWByxrVtLFq.b4MeAWCIIDeMDXgB8OfY.oVfTu1YZHe";"user";"2025-09-24 16:30:53";"2025-09-24 17:55:12";"";"";0
+26;"user1";"user1@gamil.com";"$2b$10$FLPplof.l9kSfchDrH9r7.wd.cJGQaACH9S0cv.M.imxLD52BcUOq";"user";"2025-09-30 15:15:06";"2025-09-30 17:01:14";"";"2025-09-30 17:01:14";0
+27;"user2";"user2@gamil.com";"$2b$10$z4sWlsg3ulnBVyVkgLAI4eAfPWPDW/bC79W/Ag.ZAEKM/f5aFtIm6";"user";"2025-09-30 15:16:29";"2025-09-30 15:18:50";"";"2025-09-30 15:18:50";0
+28;"John Doe";"john@example.com";"$2b$10$abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijab";"user";"2025-08-01 10:00:00";"2025-08-01 10:00:00";"";"2025-08-10 08:00:00";0
+29;"Jane Smith";"jane@example.com";"$2b$10$abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijab";"user";"2025-08-02 09:30:00";"2025-08-10 09:30:00";"";"2025-08-15 11:45:00";0
+30;"Alice";"alice@example.com";"$2b$10$abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijab";"admin";"2025-08-05 08:10:00";"2025-08-20 12:00:00";"";"2025-09-10 14:00:00";0
+31;"Bob";"bob@example.com";"$2b$10$abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijab";"user";"2025-08-10 14:15:00";"2025-09-05 09:00:00";"";"2025-09-07 10:00:00";0
+32;"Charlie";"charlie@example.com";"$2b$10$abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijab";"user";"2025-09-01 11:45:00";"2025-10-10 08:30:00";"";"2025-10-10 08:30:00";0
+34;"a           ";"f@d.com";"$2b$10$iJC59wHGIelgro5JYDh9W.Qtcf5KQNR3mp2DVCqNMrLAJA3bLphVW";"user";"2025-10-29 17:10:52";"2025-10-29 17:10:52";"";"";0

@@ -1,0 +1,6 @@
+"id";"user_id";"subject";"description";"status";"priority";"created_at";"updated_at"
+1;20;"first";"";"resolved";"medium";"2025-09-22 15:52:30";"2025-09-24 12:37:03"
+2;20;"secnsa";"";"pending";"medium";"2025-09-22 16:26:45";"2025-10-27 18:29:03"
+3;20;"ssasa";"";"resolved";"medium";"2025-09-22 16:49:51";"2025-09-22 17:10:21"
+4;20;"rfawr";"";"open";"medium";"2025-09-22 17:17:33";"2025-09-22 17:17:33"
+5;20;"sasdada";"";"open";"medium";"2025-09-22 17:18:40";"2025-09-22 17:18:40"

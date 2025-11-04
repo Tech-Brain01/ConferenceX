@@ -57,11 +57,11 @@ export const getUserFeedbackController = async (req, res) => {
     const fromDate = req.query.from || null;
     const toDate = req.query.to || null;
 
-    console.log("userId:", userId);
-    console.log("from:", fromDate, "to:", toDate);
+    // console.log("userId:", userId);
+    // console.log("from:", fromDate, "to:", toDate);
     const feedbackData = await getAllFeedback(userId, fromDate, toDate);
-    console.log(" result count:", feedbackData.length);
-    console.log(" first record:", feedbackData[0]);
+    // console.log(" result count:", feedbackData.length);
+    // console.log(" first record:", feedbackData[0]);
 
     res.json(feedbackData);
   } catch (err) {
@@ -70,6 +70,14 @@ export const getUserFeedbackController = async (req, res) => {
   }
 };
 
+export const submitUserFeedbackController = async (req, res) => {
+  try {
+    
+  } catch (err) {
+    console.error("Error submitting user feedback:", err);
+    res.status(500).json({message: "Internal Server Error" });
+  }
+}
 
 export const getUserHistoryController = async (req,res) => {
     try {
@@ -94,12 +102,12 @@ export const getUserInvoicesController = async (req, res) => {
     const fromDate = req.query.from || null;
     const toDate = req.query.to || null;
 
-    console.log("[INVOICE DEBUG] userId:", userId);
-    console.log("[INVOICE DEBUG] from:", fromDate, "to:", toDate);
+    // console.log("[INVOICE DEBUG] userId:", userId);
+    // console.log("[INVOICE DEBUG] from:", fromDate, "to:", toDate);
 
     const userInvoices = await getInvoicesByUser(userId, fromDate, toDate);
-    console.log(" [INVOICE DEBUG] result count:", userInvoices.length);
-    console.log("[INVOICE DEBUG] first record:", userInvoices[0]);
+    // console.log(" [INVOICE DEBUG] result count:", userInvoices.length);
+    // console.log("[INVOICE DEBUG] first record:", userInvoices[0]);
 
     res.json(userInvoices);
   } catch (err) {
