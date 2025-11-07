@@ -33,7 +33,7 @@ const renderWords = () => {
             <motion.span
               key={word + idx}
               className={cn(
-                "dark:text-white text-black opacity-0",
+                " text-gray-600 opacity-0",
                 isHighlighted ? highlightClassName : ""
               )}
               style={{

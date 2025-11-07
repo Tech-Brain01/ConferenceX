@@ -3,7 +3,13 @@ import { AnimatePresence, motion } from "motion/react";
 
 import { useState } from "react";
 
-export const HoverEffect = ({ items, className }) => {
+export const HoverEffect = ({
+  items,
+  className,
+  cardClassName,
+  titleClassName,
+  descriptionClassName,
+}) => {
   let [hoveredIndex, setHoveredIndex] = useState(null);
 
   return (
@@ -38,7 +44,10 @@ export const HoverEffect = ({ items, className }) => {
               />
             )}
           </AnimatePresence>
-          <Card>
+          <Card className={cn(cardClassName, item.bgColor)}>
+            {item.icon && (
+              <item.icon className="w-10 h-10 text-gray-800 mb-4" />
+            )}
             {item.image && (
               <img
                 src={item.image}
@@ -46,8 +55,10 @@ export const HoverEffect = ({ items, className }) => {
                 className="rounded-xl w-full h-40 object-cover mb-4 shadow-md"
               />
             )}
-            <CardTitle>{item.title}</CardTitle>
-            <CardDescription>{item.description}</CardDescription>
+            <CardTitle className={titleClassName}>{item.title}</CardTitle>
+            <CardDescription className={descriptionClassName}>
+              {item.description}
+            </CardDescription>
           </Card>
         </a>
       ))}

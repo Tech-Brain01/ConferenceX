@@ -76,23 +76,23 @@ const RoomList = () => {
       title: room.name,
       image: `http://localhost:8080/uploads/${room.image}`,
       description: (
-        <div className="space-y-2 text-sm text-neutral-300">
+        <div className="space-y-2 text-sm text-black">
           <div className="flex items-center justify-center">
-            <span className="text-green-400 font-semibold text-sm">
+            <span className="text-green-700 font-semibold text-sm">
               ₹{Number(room.price).toFixed(2)}/Day
             </span>
           </div>
           <Table>
             <TableBody>
               <TableRow className="border-b-0">
-                <TableCell className="font-semibold text-cyan-400 flex">
+                <TableCell className="font-semibold text-amber-600 flex">
                   <span className="flex-grow text-left">Capacity No</span>
                   <span className="w-4 text-left px-2">:</span>
                 </TableCell>
                 <TableCell className="text-left">{room.capacity}</TableCell>
               </TableRow>
               <TableRow className="border-b-0">
-                <TableCell className="font-semibold text-cyan-400 flex">
+                <TableCell className="font-semibold text-amber-600 flex">
                   <span className="flex-grow text-left">Features List</span>
                   <span className="w-4 text-left px-2">:</span>
                 </TableCell>
@@ -105,7 +105,7 @@ const RoomList = () => {
                 </TableCell>
               </TableRow>
               <TableRow className="border-b-0">
-                <TableCell className="font-semibold text-cyan-400 flex">
+                <TableCell className="font-semibold text-amber-600 flex">
                   <span className="flex-grow text-left">Location</span>
                   <span className="w-4 text-left px-2">:</span>
                 </TableCell>
@@ -127,7 +127,7 @@ const RoomList = () => {
               </TableRow>
 
               <TableRow className="border-b-0">
-                <TableCell className="font-semibold text-cyan-400 flex">
+                <TableCell className="font-semibold text-amber-600 flex">
                   <span className="flex-grow text-left">Price of Room</span>
                   <span className="w-4 text-left px-2">:</span>
                 </TableCell>
@@ -154,7 +154,12 @@ const RoomList = () => {
 
   return (
     <>
-      <HoverEffect items={roomItems} />
+      <HoverEffect
+        items={roomItems}
+        cardClassName="bg-white border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl p-6 transition-transform"
+        titleClassName="text-gray-900 font-bold text-xl md:text-2xl"
+        descriptionClassName="text-gray-600 text-sm md:text-base mt-2"
+      />
 
       <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <AlertDialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto rounded-lg bg-white  p-6 shadow-lg">
@@ -286,10 +291,14 @@ const RoomList = () => {
           </div>
         </AlertDialogContent>
       </AlertDialog>
-
       {bookingOpen && (
         <BookingForm
           onClose={() => setBookingOpen(false)}
+          onBookingSuccess={() => {
+           
+            setBookingOpen(false);
+            setDialogOpen(false);
+          }}
           roomId={selectedRoom?.id}
         />
       )}

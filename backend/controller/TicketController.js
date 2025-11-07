@@ -112,7 +112,7 @@ export const updateTicketStatusController = async (req, res) => {
       return res.status(400).json({ error: "Invalid ticket ID" });
     }
 
-    if (!["open", "resolved", "pending"].includes(status)) {
+    if (!["open", "resolved", "in_progress"].includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
     }
 

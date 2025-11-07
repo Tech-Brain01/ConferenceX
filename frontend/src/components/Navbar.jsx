@@ -41,7 +41,7 @@ export const NavBody = ({ children, className, visible, user }) => {
   return (
     <motion.div
       animate={{
-        backdropFilter: visible ? "blur(10px)" : "none",
+        backdropFilter: visible ? "blur(50px)" : "none",
         boxShadow: visible
           ? "0 0 24px rgba(34, 42, 53, 0.06), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.04), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
           : "none",
@@ -57,13 +57,13 @@ export const NavBody = ({ children, className, visible, user }) => {
         minWidth: "800px",
       }}
       className={cn(
-        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full bg-transparent px-4 py-2 lg:flex dark:bg-transparent",
+        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full bg-transparent px-4 py-2 lg:flex ",
         visible && " py-5 bg-transparent ",
         className
       )}
     >
       {user?.name && (
-        <div className="text-md text-white  px-4">
+        <div className="text-md text-amber-700  px-4">
           Welcome, <strong>{user.name}</strong>
         </div>
       )}
@@ -106,14 +106,14 @@ export const NavItems = ({ items, className, onItemClick, user, logout }) => {
               onItemClick(); 
             }
           }}
-          className="relative px-4 py-2 text-neutral-600 dark:text-neutral-300"
+          className="relative px-4 py-2 text-base text-neutral-600 "
           key={`link-${idx}`}
           href={item.link}
         >
           {hovered === idx && (
             <motion.div
               layoutId="hovered"
-              className="absolute inset-0 h-full w-full rounded-full bg-gray-100 dark:bg-neutral-800"
+              className="absolute inset-0 h-full w-full rounded-full bg-gray-200 "
             />
           )}
           <span className="relative z-20">{item.name}</span>

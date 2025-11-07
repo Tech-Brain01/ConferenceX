@@ -13,6 +13,12 @@ module.exports = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    "bg-yellow-50",
+    "bg-cyan-50",
+    "bg-purple-50",
+    " bg-gradient-to-r from-amber-50 to-orange-100",
+  ],
   darkMode: "class",
   theme: {
     container: {

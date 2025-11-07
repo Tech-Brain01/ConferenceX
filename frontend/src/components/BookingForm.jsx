@@ -14,21 +14,14 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "./ui/alert_dialog.jsx";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover.jsx";
-import { Calendar } from "./ui/calendar.jsx";
-import { ChevronDownIcon } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-const BookingForm = ({ onClose, roomId }) => {
+const BookingForm = ({ onClose, onBookingSuccess, roomId }) => {
   const { user } = useContext(AuthContext);
-
   const [room, setRoom] = useState(null);
   const [loadingRoom, setLoadingRoom] = useState(true);
-
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [startDateTime, setStartDateTime] = useState(null);
@@ -44,6 +37,7 @@ const BookingForm = ({ onClose, roomId }) => {
         const resRoom = await fetch(
           `http://localhost:8080/api/rooms/${roomId}`
         );
+
         if (!resRoom.ok) throw new Error("Failed to fetch room");
         const roomData = await resRoom.json();
         setRoom(roomData);
@@ -121,6 +115,7 @@ const BookingForm = ({ onClose, roomId }) => {
     const offset = 5.5 * 60;
     return new Date(date.getTime() + offset * 60 * 1000);
   }
+  
 
   const handleBooking = async () => {
     setLoading(true);
@@ -145,13 +140,18 @@ const BookingForm = ({ onClose, roomId }) => {
         }),
       });
 
+
+
       const data = await res.json();
       console.log(data);
-
       if (res.ok) {
         toast.success("Booking request sent!");
         setConfirmOpen(false);
-        onClose();
+        onClose(); 
+
+        if (typeof onBookingSuccess === "function") {
+          onBookingSuccess();
+        }
       } else {
         toast.error(data.error || "Booking failed");
       }
@@ -162,40 +162,6 @@ const BookingForm = ({ onClose, roomId }) => {
       setLoading(false);
     }
   };
-
-  // function formatDateForDisplay(dateString) {
-  //   const date = new Date(dateString);
-  //   if (isNaN(date)) return "";
-  //   return date.toLocaleDateString("en-GB", {
-  //     day: "numeric",
-  //     month: "short",
-  //     year: "numeric",
-  //   });
-  // }
-
-  // const renderDay = (date) => {
-  //   const dateStr = date.toISOString().split("T")[0];
-  //   const isBooked = bookedDatesSet.has(dateStr);
-
-  //   return (
-  //     <div
-  //       style={{
-  //         width: "2rem",
-  //         height: "2rem",
-  //         lineHeight: "2rem",
-  //         borderRadius: "0.375rem",
-  //         textAlign: "center",
-  //         cursor: isBooked ? "not-allowed" : "pointer",
-  //         backgroundColor: isBooked ? "#F87171" : "#34D399",
-  //         color: "white",
-  //         border: "1px solid black",
-  //         opacity: isBooked ? 0.6 : 1,
-  //       }}
-  //     >
-  //       {date.getDate()}
-  //     </div>
-  //   );
-  // };
 
   return (
     <>
@@ -247,130 +213,6 @@ const BookingForm = ({ onClose, roomId }) => {
                   />
                 </div>
               </div>
-
-              {/* <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="start_date">From Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        className="flex justify-between items-center w-full px-4 py-2 border border-cyan-500 rounded-md
-                                        text-cyan-700 font-medium shadow-sm
-                                        hover:bg-cyan-50 hover:border-cyan-600
-                                        focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-1
-                                        transition-colors duration-200"
-                      >
-                        {startDate
-                          ? formatDateForDisplay(startDate)
-                          : "Select Start Date"}
-                        <ChevronDownIcon className="w-5 h-5 text-cyan-600 ml-2" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="mt-1 bg-white dark:bg-zinc-700 border border-cyan-200 rounded-lg shadow-lg p-4">
-                      <Calendar
-                        mode="single"
-                        captionLayout="dropdown"
-                        selected={startDate ? new Date(startDate) : undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            const iso = formatDateToLocalISO(date);
-                            setStartDate(iso);
-
-                            // If endDate is before new startDate, reset endDate to startDate
-                            if (endDate && new Date(endDate) < new Date(iso)) {
-                              setEndDate(iso);
-                            }
-                          }
-                        }}
-                        disabled={(date) =>
-                          date < new Date().setHours(0, 0, 0, 0) ||
-                          bookedDatesSet.has(date.toISOString().split("T")[0])
-                        }
-                        dayContent={renderDay}
-                        className="
-                                        bg-white text-black rounded-lg
-                                        [&_button]:rounded-md [&_button]:p-2 [&_button]:transition-colors
-                                        [&_button:hover]:bg-cyan-100 [&_button:hover]:text-cyan-900
-                                        [&_button:focus-visible]:ring-2 [&_button:focus-visible]:ring-cyan-400
-                                        [&_button[data-selected]]:bg-cyan-600 [&_button[data-selected]]:text-white
-                                        [&_button[data-selected]]:shadow-md
-                                        [&_button[disabled]]:opacity-40 [&_button[disabled]]:cursor-not-allowed
-                                      "
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div>
-                  <Label htmlFor="end_date">Till Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        className="flex justify-between items-center w-full px-4 py-2 border border-cyan-500 rounded-md
-                                       text-cyan-700 font-medium shadow-sm
-                                       hover:bg-cyan-50 hover:border-cyan-600
-                                       focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-1
-                                       transition-colors duration-200"
-                      >
-                        {endDate
-                          ? formatDateForDisplay(endDate)
-                          : "Select End Date"}
-                        <ChevronDownIcon className="w-5 h-5 text-cyan-600 ml-2" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="mt-1 bg-white dark:bg-zinc-700 border border-cyan-200 rounded-lg shadow-lg p-4">
-                      <Calendar
-                        mode="single"
-                        captionLayout="dropdown"
-                        selected={endDate ? new Date(endDate) : undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            const iso = formatDateToLocalISO(date);
-                            setEndDate(iso);
-                          }
-                        }}
-                        disabled={(date) => {
-                          if (!startDate) return true;
-
-                          const dateStr = date.toISOString().split("T")[0];
-                          const startDateStr = new Date(startDate)
-                            .toISOString()
-                            .split("T")[0];
-
-                          const isBeforeStart =
-                            new Date(dateStr) < new Date(startDateStr);
-                          const isBooked = bookedDatesSet.has(dateStr);
-
-                          const shouldDisable = isBeforeStart || isBooked;
-
-                          console.log(
-                            "🔍 Disabled check for date:",
-                            dateStr,
-                            "startDate:",
-                            startDateStr,
-                            "disabled:",
-                            shouldDisable
-                          );
-
-                          return shouldDisable;
-                        }}
-                        dayContent={renderDay}
-                        className="
-                                       bg-white text-black rounded-lg
-                                       [&_button]:rounded-md [&_button]:p-2 [&_button]:transition-colors
-                                       [&_button:hover]:bg-cyan-100 [&_button:hover]:text-cyan-900
-                                       [&_button:focus-visible]:ring-2 [&_button:focus-visible]:ring-cyan-400
-                                       [&_button[data-selected]]:bg-cyan-600 [&_button[data-selected]]:text-white
-                                       [&_button[data-selected]]:shadow-md
-                                       [&_button[disabled]]:opacity-40 [&_button[disabled]]:cursor-not-allowed
-                                     "
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div> */}
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
@@ -426,13 +268,6 @@ const BookingForm = ({ onClose, roomId }) => {
                  text-cyan-700 font-medium focus:ring-2 focus:ring-cyan-400
                  focus:outline-none hover:border-cyan-600"
                     popperPlacement="bottom"
-                    //                     renderDayContents={(day, date) => {
-                    //   const dateStr = date.toISOString().split("T")[0];
-                    //   if (bookedDatesSet.has(dateStr)) {
-                    //     return <span title="Booked" style={{ color: "red" }}>{day}</span>;
-                    //   }
-                    //   return day;
-                    // }}
                   />
                 </div>
               </div>

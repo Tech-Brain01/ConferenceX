@@ -14,31 +14,30 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        console.log("✅ Decoded token in AuthContext:", decoded);
+        console.log("Decoded token in AuthContext:", decoded);
 
-        // Optional: token expiry check
         const currentTime = Date.now() / 1000;
         if (decoded.exp && decoded.exp < currentTime) {
-          console.warn("⚠️ Token expired");
+          console.warn("Token expired");
           localStorage.removeItem("token");
           setUser(null);
         } else {
           setUser(decoded);
         }
       } catch (err) {
-        console.error("❌ Invalid token in AuthContext:", err);
+        console.error("Invalid token in AuthContext:", err);
         localStorage.removeItem("token");
       }
     }
   }, []);
 
   const login = (userData) => {
-    console.log("✅ Setting user from login:", userData);
+    console.log(" Setting user from login:", userData);
     setUser(userData);
   };
 
   const logout = () => {
-    console.log("👋 Logging out");
+    console.log("Logging out");
     setUser(null);
     localStorage.removeItem("token");
   };
@@ -53,7 +52,7 @@ export const AuthProvider = ({ children }) => {
   } catch (error) {
     console.error("Update user failed:", error.response?.data || error.message);
     throw error;  
-  } // <-- missing closing brace added here
+  } 
 };
 
 const updatePassword = async ({ currentPassword, newPassword }) => {

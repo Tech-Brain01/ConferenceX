@@ -186,7 +186,7 @@ export default function AdminSupportPage() {
                     }`}
                   >
                     <option value="open">Open</option>
-                    <option value="pending">Pending</option>
+                    <option value="in_progress">In Progress</option>
                     <option value="resolved">Resolved</option>
                   </select>
                   {updatingStatus && (

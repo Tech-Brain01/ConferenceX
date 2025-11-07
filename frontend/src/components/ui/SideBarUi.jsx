@@ -135,22 +135,33 @@ export const MobileSidebar = ({
   );
 };
 
-export const SidebarLink = ({
-  link,
-  className,
-  ...props
-}) => {
+export const SidebarLink = ({ link, className, ...props }) => {
   const { open, animate } = useSidebar();
+
+  const baseClasses =
+    "flex items-center justify-start gap-2 group/sidebar py-2 px-2 rounded-md transition-all";
+
+  const normalClasses =
+    "text-neutral-400 dark:text-neutral-300 hover:bg-neutral-800 hover:text-white";
+
+  const activeClasses =
+    "bg-neutral-300 dark:bg-neutral-700 text-black dark:text-white";
+
+  const logoutClasses =
+    "text-red-500 hover:text-red-400 hover:bg-red-950/30"; // 👈 red text + hover style
 
   return (
     <NavLink
       to={link.href}
+      end={link.href.endsWith("/dashboard")}
       className={({ isActive }) =>
         cn(
-          "flex items-center justify-start gap-2 group/sidebar py-2 px-2 rounded-md transition-all",
-          isActive
-            ? "bg-neutral-300 dark:bg-neutral-700 text-black dark:text-white"
-            : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-800",
+          baseClasses,
+          link.isLogout
+            ? logoutClasses
+            : isActive
+            ? activeClasses
+            : normalClasses,
           className
         )
       }
@@ -162,11 +173,15 @@ export const SidebarLink = ({
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        className="text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre"
+        className={cn(
+          "text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre",
+          link.isLogout && "text-red-500 group-hover/sidebar:text-red-400"
+        )}
       >
         {link.label}
       </motion.span>
     </NavLink>
   );
 };
+
 

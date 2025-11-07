@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { useLocation, Navigate, Routes, Route } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext.jsx";
 import { Toaster } from "../src/components/ui/toaster.jsx";
-import {toast} from "sonner";
+import { toast } from "sonner";
 
 // Navbar
 import { Navbar, NavBody, NavItems } from "./components/Navbar.jsx";
@@ -12,7 +12,7 @@ import Home from "./Pages/Home.jsx";
 import LoginPage from "./components/LoginPage.jsx";
 import SignupPage from "./components/SignupPage.jsx";
 import BookingForm from "./components/BookingForm.jsx";
-import AdvanceBookingForm from './components/advance_booking.jsx';
+import AdvanceBookingForm from "./components/advance_booking.jsx";
 
 //User Pages
 import UserDashboard from "./Pages/UserDashboard.jsx";
@@ -83,12 +83,16 @@ function AppWrapper() {
           <Route path="/login" element={<LoginPage onLogin={login} />} />
           <Route path="/signup" element={<SignupPage onLogin={login} />} />
           <Route path="/book/:id" element={<BookingForm />} />
-          <Route path="/rooms/:id/advance-book" element={<AdvanceBookingForm onClose={() => Navigate(-1)} />} />
+          <Route
+            path="/rooms/:id/advance-book"
+            element={<AdvanceBookingForm onClose={() => Navigate(-1)} />}
+          />
 
           {/* User Route */}
           <Route path="/dashboard" element={<UserDashboard />}>
-            <Route index element={<Navigate to="bookings" />} />
-            <Route path="user" element={<DashboardUser/>}/>
+            <Route index element={<Navigate to="user" />} />
+            
+            <Route path="user" element={<DashboardUser />} />
             <Route path="bookings" element={<DashboardTabs />} />
             <Route path="support" element={<SupportPage />} />
             <Route path="profile" element={<Profile />} />
@@ -103,7 +107,9 @@ function AppWrapper() {
               </ProtectedAdminRoute>
             }
           >
-            <Route index element={<Navigate to="rooms" />} />
+            <Route index element={<Navigate to="dashboard" />} />
+
+            <Route path="dashboard" element={<Dashboard />} />
             <Route path="rooms" element={<ManageRooms />} />
             <Route path="rooms/add" element={<AddRoom />} />
             <Route path="rooms/edit/:id" element={<EditRoom />} />
@@ -112,9 +118,9 @@ function AppWrapper() {
             <Route path="master" element={<MasterDataManagement />} />
             <Route path="profile" element={<AdminProfile />} />
             <Route path="support" element={<AdminSupportPage />} />
-             <Route path="users" element={<AdminUserControl/>} />
-             <Route path="dashboard" element={<Dashboard/>}/>
-             <Route path="analytics" element={<Analytics/>}/>
+            <Route path="users" element={<AdminUserControl />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="analytics" element={<Analytics />} />
           </Route>
         </Routes>
       </div>
