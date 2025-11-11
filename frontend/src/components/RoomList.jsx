@@ -18,13 +18,19 @@ import {
 } from "@heroicons/react/24/outline";
 import { Table, TableBody, TableRow, TableCell } from "./ui/table.jsx";
 
+
+
 const RoomList = () => {
   const [rooms, setRooms] = useState([]);
+  const [sortOrder, setSortOrder] = useState("");
   const [filters, setFilters] = useState({
-    capacity: "",
-    feature: "",
-    available_from: "",
-  });
+  name: "",
+  feature: "",
+  capacity: "",
+  location: "",
+  minPrice: "",
+  maxPrice: "",
+});
   const [bookingOpen, setBookingOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -74,69 +80,59 @@ const RoomList = () => {
   const roomItems = filterRooms.map((room) => {
     return {
       title: room.name,
-      image: `http://localhost:8080/uploads/${room.image}`,
       description: (
-        <div className="space-y-2 text-sm text-black">
-          <div className="flex items-center justify-center">
-            <span className="text-green-700 font-semibold text-sm">
-              ₹{Number(room.price).toFixed(2)}/Day
-            </span>
-          </div>
-          <Table>
+        <div className="space-y-4">
+          <img
+            src={`http://localhost:8080/uploads/${room.image}`}
+            alt={room.name}
+            className="w-full h-48 object-cover rounded-xl shadow-md"
+          />
+
+          {/* Room Info Table */}
+          <Table className="text-sm">
             <TableBody>
-              <TableRow className="border-b-0">
-                <TableCell className="font-semibold text-amber-600 flex">
-                  <span className="flex-grow text-left">Capacity No</span>
-                  <span className="w-4 text-left px-2">:</span>
+              <TableRow className="border-b border-gray-700">
+                <TableCell className="font-semibold text-amber-400">
+                  Capacity No
                 </TableCell>
                 <TableCell className="text-left">{room.capacity}</TableCell>
               </TableRow>
-              <TableRow className="border-b-0">
-                <TableCell className="font-semibold text-amber-600 flex">
-                  <span className="flex-grow text-left">Features List</span>
-                  <span className="w-4 text-left px-2">:</span>
+              <TableRow className="border-b border-gray-700">
+                <TableCell className="font-semibold text-amber-400">
+                  Features
                 </TableCell>
-                <TableCell className="text-left">
+                <TableCell>
                   {room?.features
                     ? room.features.length <= 2
                       ? room.features.join(", ")
-                      : room.features.slice(0, 2).join(", ") + ", ..."
+                      : room.features.slice(0, 2).join(", ") + ","
                     : "None"}
                 </TableCell>
               </TableRow>
-              <TableRow className="border-b-0">
-                <TableCell className="font-semibold text-amber-600 flex">
-                  <span className="flex-grow text-left">Location</span>
-                  <span className="w-4 text-left px-2">:</span>
-                </TableCell>
-                <TableCell className="text-left">
-                  {room?.location
-                    ? Array.isArray(room.location)
-                      ? room.location.length <= 2
-                        ? room.location.join(", ")
-                        : room.location.slice(0, 2).join(", ") + ", ..."
-                      : (() => {
-                          const parts = room.location.split(",");
-                          return (
-                            parts.slice(0, 2).join(", ") +
-                            (parts.length > 2 ? ", ..." : "")
-                          );
-                        })()
-                    : "None"}
-                </TableCell>
-              </TableRow>
-
-              <TableRow className="border-b-0">
-                <TableCell className="font-semibold text-amber-600 flex">
-                  <span className="flex-grow text-left">Price of Room</span>
-                  <span className="w-4 text-left px-2">:</span>
-                </TableCell>
-                <TableCell className="text-left">
-                  ₹{Number(room.price).toFixed(2)}/Day
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+             <TableRow className="border-b border-gray-700">
+              <TableCell className="font-semibold text-amber-400">Location</TableCell>
+              <TableCell>
+                {room?.location
+                  ? Array.isArray(room.location)
+                    ? room.location.length <= 2
+                      ? room.location.join(", ")
+                      : room.location.slice(0, 2).join(", ") + ", ..."
+                    : (() => {
+                        const parts = room.location.split(",");
+                        return (
+                          parts.slice(0, 2).join(", ") +
+                          (parts.length > 2 ? ", ..." : "")
+                        );
+                      })()
+                  : "None"}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="font-semibold text-amber-400">Price</TableCell>
+              <TableCell>₹{Number(room.price).toFixed(2)}/Day</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
 
           <button
             onClick={() => {
@@ -156,9 +152,9 @@ const RoomList = () => {
     <>
       <HoverEffect
         items={roomItems}
-        cardClassName="bg-white border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl p-6 transition-transform"
-        titleClassName="text-gray-900 font-bold text-xl md:text-2xl"
-        descriptionClassName="text-gray-600 text-sm md:text-base mt-2"
+        cardClassName="bg-gray-900/80 border border-gray-700 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 flex flex-col justify-between"
+        titleClassName="text-white font-bold text-xl md:text-2xl"
+        descriptionClassName="text-gray-300 text-sm md:text-base mt-4"
       />
 
       <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -295,7 +291,6 @@ const RoomList = () => {
         <BookingForm
           onClose={() => setBookingOpen(false)}
           onBookingSuccess={() => {
-           
             setBookingOpen(false);
             setDialogOpen(false);
           }}

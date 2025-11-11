@@ -11,6 +11,7 @@ import dashboardRoutes from "./routes/DashboardRoute.js";
 import session from 'express-session';
 import svgCaptcha from 'svg-captcha';
 import userDashboardRoutes from "./routes/UserDashboardRoute.js";
+import searchRoom from "./routes/RoomFilterRoutes.js";
 import "./cron/bookingMonitor.js";
 
 
@@ -66,6 +67,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/master",masterRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/user/dashboard", userDashboardRoutes);
+app.use("/api/filter", searchRoom)
 
 app.listen(process.env.PORT, () => {
     console.log(`server running on port ${process.env.PORT}`);

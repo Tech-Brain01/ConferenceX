@@ -11,7 +11,8 @@ import {
   CartesianGrid,
 } from "recharts";
 
-import { format, parseISO } from "date-fns";
+import { parse, parseISO, format } from "date-fns";
+
 
 function BookingTrendsChart({ filterDate }) {
   const [data, setData] = useState([]);
@@ -66,18 +67,28 @@ function BookingTrendsChart({ filterDate }) {
   }, [filterDate]);
 
   const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    const { totalbookings, roomNames } = payload[0].payload;
-    return (
-      <div className="bg-violet-300 text-black p-3 border rounded shadow-lg max-w-sm text-sm">
-        <p className="font-semibold mb-2">{formatPeriod(label)}</p>
-        <p className="text-base font-bold"><strong className="text-sm font-semibold text-amber-900 ">Total Bookings:</strong> {totalbookings}</p>
-        <p className="text-base font-bold"><strong className="text-sm font-semibold text-amber-900 ">Rooms:</strong> {roomNames || "N/A"}</p>
-      </div>
-    );
-  }
-  return null;
-};
+    if (active && payload && payload.length) {
+      const { totalbookings, roomNames } = payload[0].payload;
+      return (
+        <div className="bg-violet-300 text-black p-3 border rounded shadow-lg max-w-sm text-sm">
+          <p className="font-semibold mb-2">{formatPeriod(label)}</p>
+          <p className="text-base font-bold">
+            <strong className="text-sm font-semibold text-amber-900 ">
+              Total Bookings:
+            </strong>{" "}
+            {totalbookings}
+          </p>
+          <p className="text-base font-bold">
+            <strong className="text-sm font-semibold text-amber-900 ">
+              Rooms:
+            </strong>{" "}
+            {roomNames || "N/A"}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <Card className="bg-gradient-to-r from-indigo-600 to-indigo-800 text-white rounded-xl shadow-lg mt-10 p-4">
@@ -102,7 +113,10 @@ function BookingTrendsChart({ filterDate }) {
               tick={{ fontSize: 12 }}
               axisLine={{ stroke: "#c7d2fe" }}
               tickLine={false}
-              tickFormatter={(dateStr) => format(parseISO(dateStr), "MMM d")}
+              tickFormatter={(dateStr) => {
+                const date = parse(dateStr, "dd-MM-yyyy", new Date());
+                return format(date, "MMM-d");
+              }}
               label={{
                 value: "Date",
                 position: "bottom",

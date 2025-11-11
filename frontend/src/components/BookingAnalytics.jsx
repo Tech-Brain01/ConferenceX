@@ -13,7 +13,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { format, parseISO } from "date-fns";
+import { parse, parseISO, format } from "date-fns";
 import { DownloadBookingAnalyticsExcelButton } from "./ExcelButton.jsx";
 
 function Booking_Over_Time({ data }) {
@@ -59,7 +59,10 @@ function Booking_Over_Time({ data }) {
               tick={{ fontSize: 12 }}
               axisLine={{ stroke: "#F96E05" }}
               tickLine={false}
-              tickFormatter={(dateStr) => format(parseISO(dateStr), "MMM-d ")}
+              tickFormatter={(dateStr) => {
+                const date = parse(dateStr, "dd-MM-yyyy", new Date());
+                return format(date, "MMM-d");
+              }}
             />
             <YAxis
               stroke="#8021EC"
@@ -171,17 +174,16 @@ const BookingAnalytics = () => {
   const [cancelApprovedData, setCancelApprovedData] = useState([]);
   const [cancelApprovedLoading, setCancelApprovedLoading] = useState(false);
   const getDefaultFromDate = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1
-    );
-    const getDefaultToDate = new Date();
-  
-    const [filterDate, setFilterDate] = useState({
-      fromDate: getDefaultFromDate,
-      toDate: getDefaultToDate,
-    });
-  
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1
+  );
+  const getDefaultToDate = new Date();
+
+  const [filterDate, setFilterDate] = useState({
+    fromDate: getDefaultFromDate,
+    toDate: getDefaultToDate,
+  });
 
   const handleApplyFilter = (fromDate, toDate) => {
     setFilterDate({ fromDate, toDate });
@@ -294,13 +296,13 @@ const BookingAnalytics = () => {
           <p className="text-gray-600">
             Track and visualize your bookings with clarity.
           </p>
-          <DownloadBookingAnalyticsExcelButton filterDate={filterDate}/>
+          <DownloadBookingAnalyticsExcelButton filterDate={filterDate} />
           <div className="mt-10 flex items-center justify-center">
-             <FilterBar
-            onApply={handleApplyFilter}
-            initialFromDate={filterDate.fromDate}
-            initialToDate={filterDate.toDate}
-          />
+            <FilterBar
+              onApply={handleApplyFilter}
+              initialFromDate={filterDate.fromDate}
+              initialToDate={filterDate.toDate}
+            />
           </div>
         </header>
 

@@ -62,11 +62,7 @@ export const NavBody = ({ children, className, visible, user }) => {
         className
       )}
     >
-      {user?.name && (
-        <div className="text-md text-amber-700  px-4">
-          Welcome, <strong>{user.name}</strong>
-        </div>
-      )}
+      
     
 
       {children}
@@ -106,14 +102,14 @@ export const NavItems = ({ items, className, onItemClick, user, logout }) => {
               onItemClick(); 
             }
           }}
-          className="relative px-4 py-2 text-base text-neutral-600 "
+          className="relative px-4 py-2 text-base text-white "
           key={`link-${idx}`}
           href={item.link}
         >
           {hovered === idx && (
             <motion.div
               layoutId="hovered"
-              className="absolute inset-0 h-full w-full rounded-full bg-gray-200 "
+              className="absolute inset-0 h-full w-full rounded-full bg-gray-600 "
             />
           )}
           <span className="relative z-20">{item.name}</span>

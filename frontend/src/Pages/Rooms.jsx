@@ -1,18 +1,27 @@
 import RoomList from "../components/RoomList.jsx";
+import RoomAnimation from "../assets/Booking confirmation.json";
+import Lottie from "lottie-react";
+// import RoomFilter from "../components/RoomFilter.jsx";
 
 const Rooms = () => {
   return (
-       <div className="min-h-screen bg-gray-50 text-gray-900">
-      <section className="flex flex-col items-center justify-start min-h-screen px-4 sm:px-6 lg:px-12 pt-28 pb-20 text-center bg-gradient-to-r from-amber-50 to-orange-100 text-black py-24 ">
-        
-              <div className="container mx-auto px-6 text-center">
-         <h2 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-10">
-          Available Rooms
-        </h2>
-          <p className="text-lg max-w-xl mx-auto text-gray-400">
-            Browse our available rooms and book instantly. Enjoy modern, stylish spaces designed for comfort and productivity.
-          </p>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 text-white overflow-hidden">
+      <section className="relative flex flex-col md:flex-row items-center justify-center px-4 sm:px-6 lg:px-12 pt-25 pb-15 gap-1">
+        <div className="md:w-1/4 flex justify-center md:justify-start">
+          <div className="w-72 sm:w-96">
+            <Lottie animationData={RoomAnimation} loop={true} />
           </div>
+        </div>
+
+        <div className="md:w-3/4 flex justify-center md:justify-center">
+          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-cyan-400 bg-clip-text text-transparent mb-6">
+            Available Rooms
+          </h2>
+        </div>
+      </section>
+
+      {/* Room List Section */}
+      <section className="w-full px-4 sm:px-6 lg:px-12 mt-12">
         <RoomList />
       </section>
     </div>

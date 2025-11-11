@@ -84,10 +84,10 @@ export const DashboardExcelReportController = async (req, res) => {
       },
     ];
 
-    const index = bookedRooms.map((row,i) => ({
+    const index = bookedRooms.map((row, i) => ({
       no: i + 1,
-      ...row
-    }))
+      ...row,
+    }));
     bookedRoomsSheet.addRows(index);
 
     const bookedRoomsHeader = bookedRoomsSheet.getRow(1);
@@ -126,7 +126,7 @@ export const DashboardExcelReportController = async (req, res) => {
 
     const index1 = upcomingBookings.map((row, i) => ({
       no: i + 1,
-      ...row
+      ...row,
     }));
     upcomingBookingsSheet.addRows(index1);
 
@@ -155,17 +155,17 @@ export const DashboardExcelReportController = async (req, res) => {
       "Booking Trend Basic Detail"
     );
     bookingTrendSheet.columns = [
-      {header: "Sr no", key: "no" , width: 10},
+      { header: "Sr no", key: "no", width: 10 },
       { header: "Room Name", key: "room_names", width: 30 },
       { header: "Total Booking", key: "total_bookings", width: 15 },
       { header: "Booking Start Date", key: "period", width: 20 },
-      {header:"Booking End Date", Key: "end_period", width: 20 }
+      { header: "Booking End Date", key: "end_period", width: 20 },
     ];
 
-    const index3 = bookingTrends.map((row , i) => ({
+    const index3 = bookingTrends.map((row, i) => ({
       no: i + 1,
-      ...row
-    }))
+      ...row,
+    }));
     bookingTrendSheet.addRows(index3);
 
     const bookingTrendHeader = bookingTrendSheet.getRow(1);
@@ -194,7 +194,7 @@ export const DashboardExcelReportController = async (req, res) => {
 
     /** --- Format numeric columns in Booking Trend Sheet --- **/
     bookingTrendSheet.getColumn("total_bookings").numFmt = "#,##0";
-    bookingTrendSheet.getColumn("period").numFmt = "mm-dd-yyyy";
+    bookingTrendSheet.getColumn("period").numFmt = "dd-mm-yyyy";
 
     /** --- Finally generate and send buffer --- **/
     const buffer = await workbook.xlsx.writeBuffer();
@@ -292,7 +292,7 @@ export const BookingAnalyticsExcelReportController = async (req, res) => {
       { header: "User Name", key: "user_names", width: 30 },
       { header: "Booking Refs", key: "booking_refs", width: 40 },
       { header: "Booking Start Date", key: "period", width: 20 },
-      { header: "Booking End Date", Key: "end_period", width: 20 },
+      { header: "Booking End Date", key: "end_period", width: 20 },
       { header: "Total Approved", key: "approvedbooking", width: 15 },
       { header: "Total Cancelled", key: "cancelledbooking", width: 15 },
     ];
@@ -335,7 +335,8 @@ export const BookingAnalyticsExcelReportController = async (req, res) => {
     cancelledvsApprovedTrendSheet.getColumn("approvedbooking").numFmt = "#,##0";
     cancelledvsApprovedTrendSheet.getColumn("cancelledbooking").numFmt =
       "#,##0";
-    cancelledvsApprovedTrendSheet.getColumn("period").numFmt = "mm-dd-yyyy";
+    cancelledvsApprovedTrendSheet.getColumn("period").numFmt = "dd-mm-yyyy";
+    cancelledvsApprovedTrendSheet.getColumn("end_period").numFmt = "dd-mm-yyyy";
 
     /** --- Send buffer --- **/
     const buffer = await workbook.xlsx.writeBuffer();
@@ -416,7 +417,7 @@ export const RevenueAnalyticsExcelReportController = async (req, res) => {
     revenueTrendSheet.views = [{ state: "frozen", ySplit: 1 }];
 
     // Number and date formatting
-    revenueTrendSheet.getColumn("period").numFmt = "mm-dd-yyyy";
+    revenueTrendSheet.getColumn("period").numFmt = "dd-mm-yyyy";
     revenueTrendSheet.getColumn("total_bookings").numFmt = "#,##0";
     revenueTrendSheet.getColumn("totalrevenue").numFmt = '"$"#,##0.00';
 

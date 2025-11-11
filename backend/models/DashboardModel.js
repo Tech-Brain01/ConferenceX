@@ -29,16 +29,10 @@ export const getTotalRevenue = async (fromDate, toDate) => {
   return rows[0].totalrevenue;
 };
 
-export const getTotalRoom = async (fromDate, toDate) => {
+export const getTotalRoom = async () => {
   let query = `SELECT COUNT(*) AS totalrooms FROM rooms`;
-  const params = [];
 
-  if (fromDate && toDate) {
-    query += ` WHERE created_at BETWEEN ? AND ?`;
-    params.push(fromDate, toDate);
-  }
-
-  const [rows] = await pool.query(query, params);
+  const [rows] = await pool.query(query);
   return rows[0].totalrooms;
 };
 
@@ -94,7 +88,7 @@ export const getUpcomingBookings = async (fromDate, toDate) => {
 export const getBookingTrends = async (fromDate, toDate) => {
   const query = `
    SELECT 
-  DATE_FORMAT(b.start_date, '%Y-%m-%d') AS period,
+  DATE_FORMAT(b.start_date, '%d-%m-%Y') AS period,
   DATE_FORMAT(b.end_date, '%d-%m-%Y') AS end_period,
   COUNT(*) AS total_bookings,
   GROUP_CONCAT(DISTINCT b.booking_ref ORDER BY b.booking_ref SEPARATOR ', ') AS booking_refs,
@@ -109,7 +103,6 @@ WHERE b.status = 'approved'
   AND (? IS NULL OR b.start_date <= ?)
 GROUP BY period , end_period
 ORDER BY period
-
   `;
 
   const params = [fromDate, fromDate, toDate, toDate];
