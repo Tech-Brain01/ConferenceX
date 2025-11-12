@@ -35,6 +35,7 @@ import AdminSupportPage from "./components/AdminSupportPage.jsx";
 import AdminUserControl from "./Pages/admin/AdminUserControl.jsx";
 import Dashboard from "./Pages/admin/Dashboard.jsx";
 import Analytics from "./Pages/admin/Analytics.jsx";
+import AdminBooking from "./Pages/admin/AdminBooking.jsx";
 
 function AppWrapper() {
   const { user, logout, login } = useContext(AuthContext);
@@ -114,6 +115,7 @@ function AppWrapper() {
             <Route path="rooms/add" element={<AddRoom />} />
             <Route path="rooms/edit/:id" element={<EditRoom />} />
             <Route path="bookings" element={<ManageBookings />} />
+            <Route path="payment" element={<AdminBooking/>} />
             <Route path="bookings/:id" element={<BookingDetail />} />
             <Route path="master" element={<MasterDataManagement />} />
             <Route path="profile" element={<AdminProfile />} />

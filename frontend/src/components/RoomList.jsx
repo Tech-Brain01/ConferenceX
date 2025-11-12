@@ -18,99 +18,86 @@ import {
 } from "@heroicons/react/24/outline";
 import { Table, TableBody, TableRow, TableCell } from "./ui/table.jsx";
 
-
-
-const RoomList = () => {
+const RoomList = ({ rooms: filteredRoomsFromParent }) => {
   const [rooms, setRooms] = useState([]);
-  const [sortOrder, setSortOrder] = useState("");
-  const [filters, setFilters] = useState({
-  name: "",
-  feature: "",
-  capacity: "",
-  location: "",
-  minPrice: "",
-  maxPrice: "",
-});
   const [bookingOpen, setBookingOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [roomFeedbacks, setRoomFeedbacks] = useState([]);
 
+  // Fetch all rooms initially
   useEffect(() => {
     async function fetchRooms() {
       try {
         const res = await fetch("http://localhost:8080/api/rooms");
         const data = await res.json();
-        setRooms(data);
+        setRooms(Array.isArray(data) ? data : []); // Ensure it's always an array
       } catch (err) {
         console.error("Failed to fetch the Rooms", err);
+        setRooms([]);
       }
     }
     fetchRooms();
   }, []);
 
+  // Fetch feedbacks when a room is selected
   useEffect(() => {
     if (selectedRoom) {
       fetch(`http://localhost:8080/api/rooms/${selectedRoom.id}/feedbacks`)
         .then((res) => res.json())
-        .then((data) => setRoomFeedbacks(data))
+        .then((data) => setRoomFeedbacks(Array.isArray(data) ? data : []))
         .catch((err) => console.error("Error fetching feedbacks", err));
     }
   }, [selectedRoom]);
 
-  const filterRooms = rooms.filter((room) => {
-    // Capacity filter
-    if (filters.capacity && room.capacity < Number(filters.capacity)) {
-      return false;
-    }
+  // Ensure filteredRoomsFromParent is an array
+  const safeFilteredRooms = Array.isArray(filteredRoomsFromParent)
+    ? filteredRoomsFromParent
+    : [];
 
-    // Feature filter
-    if (
-      filters.feature &&
-      !room.features.some((f) =>
-        f.toLowerCase().includes(filters.feature.toLowerCase())
-      )
-    ) {
-      return false;
-    }
+  // Determine which rooms to display
+  const displayRooms =
+    safeFilteredRooms.length > 0 ? safeFilteredRooms : rooms;
 
-    return true;
-  });
+  if (!Array.isArray(displayRooms)) {
+    console.warn("displayRooms is not an array, defaulting to empty array");
+  }
 
-  const roomItems = filterRooms.map((room) => {
-    return {
-      title: room.name,
-      description: (
-        <div className="space-y-4">
-          <img
-            src={`http://localhost:8080/uploads/${room.image}`}
-            alt={room.name}
-            className="w-full h-48 object-cover rounded-xl shadow-md"
-          />
+  const roomItems = displayRooms.map((room) => ({
+    title: room.name,
+    description: (
+      <div className="space-y-4">
+        <img
+          src={`http://localhost:8080/uploads/${room.image}`}
+          alt={room.name}
+          className="w-full h-48 object-cover rounded-xl shadow-md"
+        />
 
-          {/* Room Info Table */}
-          <Table className="text-sm">
-            <TableBody>
-              <TableRow className="border-b border-gray-700">
-                <TableCell className="font-semibold text-amber-400">
-                  Capacity No
-                </TableCell>
-                <TableCell className="text-left">{room.capacity}</TableCell>
-              </TableRow>
-              <TableRow className="border-b border-gray-700">
-                <TableCell className="font-semibold text-amber-400">
-                  Features
-                </TableCell>
-                <TableCell>
-                  {room?.features
-                    ? room.features.length <= 2
-                      ? room.features.join(", ")
-                      : room.features.slice(0, 2).join(", ") + ","
-                    : "None"}
-                </TableCell>
-              </TableRow>
-             <TableRow className="border-b border-gray-700">
-              <TableCell className="font-semibold text-amber-400">Location</TableCell>
+        {/* Room Info Table */}
+        <Table className="text-sm">
+          <TableBody>
+            <TableRow className="border-b border-gray-700">
+              <TableCell className="font-semibold text-amber-400">
+                Capacity No
+              </TableCell>
+              <TableCell className="text-left">{room.capacity}</TableCell>
+            </TableRow>
+            <TableRow className="border-b border-gray-700">
+              <TableCell className="font-semibold text-amber-400">
+                Features
+              </TableCell>
+              <TableCell>
+                {room?.features
+                  ? room.features.length <= 2
+                    ? room.features.join(", ")
+                    : room.features.slice(0, 2).join(", ") + ", ..."
+                  : "None"}
+              </TableCell>
+            </TableRow>
+            <TableRow className="border-b border-gray-700">
+              <TableCell className="font-semibold text-amber-400">
+                Location
+              </TableCell>
               <TableCell>
                 {room?.location
                   ? Array.isArray(room.location)
@@ -134,20 +121,18 @@ const RoomList = () => {
           </TableBody>
         </Table>
 
-          <button
-            onClick={() => {
-              setSelectedRoom(room);
-              setDialogOpen(true);
-            }}
-            className="mt-2 inline-block w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 text-center font-semibold text-white shadow-lg transition-all hover:scale-105 hover:from-cyan-400 hover:to-blue-400"
-          >
-            View Details
-          </button>
-        </div>
-      ),
-    };
-  });
-
+        <button
+          onClick={() => {
+            setSelectedRoom(room);
+            setDialogOpen(true);
+          }}
+          className="mt-2 inline-block w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 text-center font-semibold text-white shadow-lg transition-all hover:scale-105 hover:from-cyan-400 hover:to-blue-400"
+        >
+          View Details
+        </button>
+      </div>
+    ),
+  }));
   return (
     <>
       <HoverEffect

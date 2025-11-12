@@ -66,6 +66,11 @@ const AdminSidebar = ({ user }) => {
           href: "/admin/users",
           icon: <UserIcon className="h-5 w-5 shrink-0" />,
         },
+         {
+          label: "Admin Bookings",
+          href: "/admin/payment",
+          icon: <CalendarDaysIcon className="h-5 w-5 shrink-0" />,
+        },
       ],
     },
     {

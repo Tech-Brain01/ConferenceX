@@ -10,7 +10,7 @@ router.get("/bookings", authenticateJWT, isAdmin, async (req, res) => {
     const { status, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
 
-    let sql = `SELECT b.id, b.start_date, b.end_date, b.status, b.payment_status, b.phone_number, b.feedback, 
+    let sql = `SELECT b.id, b.start_date, b.start_time, b.end_date, b.end_time, b.status, b.payment_status, b.phone_number, b.feedback, 
               u.name AS user_name, u.email, 
               r.name AS room_name, r.image AS room_image
               FROM bookings b
@@ -140,5 +140,63 @@ router.patch(
     }
   }
 );
+
+router.patch("/:id/payment", authenticateJWT , isAdmin , async (req,res) => {
+  const bookingId = req.params.id;
+  const userId = req.user.id;
+  
+  try {
+    const [[booking]] = await pool.query(
+      `SELECT b.id, b.start_date, b.end_date, b.payment_status, r.price AS room_price
+       FROM bookings b
+       JOIN rooms r ON b.room_id = r.id
+       WHERE b.id = ? AND b.user_id = ?`,
+       [bookingId, userId]
+    );
+
+     if (!booking) return res.status(404).json({ error: "Booking Not Found"})
+     if (booking.payment_status === "paid")
+      return res.status(400).json({ err: "Booking is already paid"})
+
+     const start = new Date(booking.start_date);
+     const end = new Date(booking.end_date);
+     const diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) +1;
+
+     const baseAmount = parseFloat(booking.room_price) * diffDays;
+     const gstRate = baseAmount <= 7500 ? 0.05 : 0.18;
+     const tax = parseFloat((baseAmount * gstRate).toFixed(2));
+
+     const transactionRef = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+     const invoiceNo = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+     await pool.query(
+      `UPDATE bookings
+      SET payment_status = "paid",
+      amount = ?,
+      tax = ?,
+      transaction_ref = ?,
+      invoice_no = ?,
+      payment_date = NOW()
+      WHERE id = ?`,
+      [baseAmount , tax , transactionRef , invoiceNo, bookingId]
+     );
+
+     res.json({
+      message: "Payment successfully done!",
+      paymentDetails: {
+        amount: baseAmount,
+        tax,
+        totalAmount: baseAmount + tax,
+        transactionRef,
+        invoiceNo,
+        numberofDays: diffDays,
+      },
+     });
+    } catch (err) {
+    console.error(err);
+    res.status(500).json({ err : "server error"})
+  }
+});
+
 
 export default router;

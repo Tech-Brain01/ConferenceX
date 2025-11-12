@@ -1,11 +1,16 @@
+import { useState } from "react";
 import RoomList from "../components/RoomList.jsx";
+import RoomFilter from "../components/RoomFilter.jsx";
 import RoomAnimation from "../assets/Booking confirmation.json";
 import Lottie from "lottie-react";
-// import RoomFilter from "../components/RoomFilter.jsx";
 
 const Rooms = () => {
+  const [filteredRooms, setFilteredRooms] = useState([]); 
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 text-white overflow-hidden">
+      
+      {/* Header Section */}
       <section className="relative flex flex-col md:flex-row items-center justify-center px-4 sm:px-6 lg:px-12 pt-25 pb-15 gap-1">
         <div className="md:w-1/4 flex justify-center md:justify-start">
           <div className="w-72 sm:w-96">
@@ -20,9 +25,14 @@ const Rooms = () => {
         </div>
       </section>
 
+      {/* Filter Section */}
+      <section className="w-full px-4 sm:px-6 lg:px-12 mt-6">
+        <RoomFilter onResults={setFilteredRooms} />
+      </section>
+
       {/* Room List Section */}
-      <section className="w-full px-4 sm:px-6 lg:px-12 mt-12">
-        <RoomList />
+      <section className="w-full px-4 sm:px-6 lg:px-12 mt-6">
+        <RoomList rooms={filteredRooms} /> {/* Pass filtered rooms */}
       </section>
     </div>
   );

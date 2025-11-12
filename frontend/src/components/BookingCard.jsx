@@ -23,8 +23,15 @@ import {
 } from "../components/ui/alert_dialog.jsx";
 
 const formatDate = (isoDate) => {
+  if (!isoDate) return "-";
   const d = new Date(isoDate);
-  return d.toLocaleDateString("en-GB");
+  return isNaN(d) ? isoDate : d.toLocaleDateString("en-GB");
+};
+
+const formatTime = (date, time) => {
+  if (!date || !time) return "-";
+  const d = new Date(`${date}T${time}`);
+  return isNaN(d) ? time : d.toLocaleTimeString("en-GB", { hour12: false });
 };
 
 const statusColors = {
@@ -72,8 +79,7 @@ const BookingCard = ({
   return (
     <div className="p-5">
       <BackgroundGradient className="rounded-2xl shadow-lg bg-white dark:bg-zinc-900 hover:shadow-2xl transition duration-300 ease-in-out">
-        <div className="flex flex-col sm:flex-row gap-6 items-center w-full p-5 bg-slate-200">
-          
+        <div className="flex flex-col sm:flex-row gap-6 items-center w-full border rounded-2xl p-5 bg-slate-200">
           {/* Image Section */}
           <div className="w-full sm:w-[180px] flex-shrink-0 overflow-hidden rounded-xl">
             <img
@@ -84,39 +90,60 @@ const BookingCard = ({
           </div>
 
           {/* User Info */}
-          <div className="flex flex-col gap-2 flex-1 min-w-0">
-            <h3 className="text-xl font-semibold text-zinc-900 truncate">
+          <div className="flex flex-col gap-2 flex-1 min-w-0 ">
+            <h3 className="text-xl font-semibold text-zinc-900 truncate bg-violet-50 w-min border border-violet-200 rounded-2xl p-2">
               Room Name: {booking.room_name}
             </h3>
             <div className="flex flex-wrap gap-6 mt-1 text-md text-zinc-700 ">
               <div className="flex items-center gap-1 whitespace-nowrap ">
                 <UserIcon className="w-5 h-5 text-red-900" />
-                <span>{booking.user_name}</span>
+                <span className="border border-b-red-600 ">{booking.user_name}</span>
               </div>
               <div className="flex items-center gap-1 whitespace-nowrap">
-                <span>📧 {booking.email}</span>
+               <span className="border border-b-red-600 ">📧 {booking.email}</span>
               </div>
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <PhoneIcon className="w-5 h-5 text-amber-700" />
-                <span>+91{booking.phone_number}</span>
+                <span className="border border-b-red-600 ">+91{booking.phone_number}</span>
               </div>
             </div>
-
+            
             {/* Dates */}
-            <div className="flex flex-wrap gap-4 mt-3 text-md text-zinc-900 ">
-              <div className="flex items-center gap-1">
-                <CalendarIcon className="w-5 h-5 text-green-900" />
-                <span>
-                  <strong className="text-green-900">Start:</strong>{" "}
-                  {formatDate(booking.start_date)}
-                </span>
+            <div className="flex flex-wrap gap-6 mt-4 text-md text-zinc-900">
+              {/* Start Date/Time */}
+              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl px-4 py-2 shadow-sm">
+                <div className="flex items-center justify-center w-10 h-10 bg-green-200 rounded-full">
+                  <CalendarIcon className="w-5 h-5 text-green-800" />
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-sm text-green-900 font-semibold">
+                    Start
+                  </span>
+                  <span className="text-sm text-green-800">
+                    {formatDate(booking.start_date)}{" "}
+                    <span className="font-medium">
+                      | {formatTime(booking.start_date, booking.start_time)}
+                    </span>
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <CalendarIcon className="w-5 h-5 text-red-950" />
-                <span>
-                  <strong className="text-red-950">End:</strong>{" "}
-                  {formatDate(booking.end_date)}
-                </span>
+
+              {/* End Date/Time */}
+              <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-2 shadow-sm">
+                <div className="flex items-center justify-center w-10 h-10 bg-red-200 rounded-full">
+                  <CalendarIcon className="w-5 h-5 text-red-900" />
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-sm text-red-900 font-semibold">
+                    End
+                  </span>
+                  <span className="text-sm text-red-800">
+                    {formatDate(booking.end_date)}{" "}
+                    <span className="font-medium">
+                      | {formatTime(booking.end_date, booking.end_time)}
+                    </span>
+                  </span>
+                </div>
               </div>
             </div>
 
