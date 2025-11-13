@@ -20,16 +20,16 @@ router.get("/bookings", authenticateJWT, isAdmin, async (req, res) => {
     let params = [];
 
     if (status) {
-      sql += " WHERE b.status = ?";
+      sql += " WHERE b.status = $1";
       params.push(status);
     }
 
-    sql += " ORDER BY b.start_date DESC LIMIT ? OFFSET ?";
+    sql += " ORDER BY b.start_date DESC LIMIT $" + (params.length + 1) + " OFFSET $" + (params.length + 2);
     params.push(parseInt(limit), parseInt(offset));
 
-    const [rows] = await pool.query(sql, params);
+    const result = await pool.query(sql, params);
 
-    res.json({ page: parseInt(page), limit: parseInt(limit), bookings: rows });
+    res.json({ page: parseInt(page), limit: parseInt(limit), bookings: result.rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
@@ -41,14 +41,16 @@ router.get("/bookings/:id", authenticateJWT, isAdmin, async (req, res) => {
   try {
     const bookingId = req.params.id;
 
-    const [[booking]] = await pool.query(
+    const result = await pool.query(
       `SELECT b.*, u.name AS user_name, u.email AS user_email, r.name AS room_name, r.description, r.image AS room_image
        FROM bookings b
        JOIN users u ON b.user_id = u.id
        JOIN rooms r ON b.room_id = r.id
-       WHERE b.id = ?`,
+       WHERE b.id = $1`,
       [bookingId]
     );
+
+    const booking = result.rows[0];
 
     if (!booking) return res.status(404).json({ error: "booking not found" });
 
@@ -73,10 +75,12 @@ router.patch(
     }
 
     try {
-      const [[booking]] = await pool.query(
-        `SELECT * FROM bookings WHERE id = ?`,
+      const result = await pool.query(
+        `SELECT * FROM bookings WHERE id = $1`,
         [bookingId]
       );
+
+      const booking = result.rows[0];
 
       if (!booking) return res.status(404).json({ err: "Booking Not Found" });
 
@@ -88,12 +92,12 @@ router.patch(
 
       // extra verification to avoid the conflict
       if (status === "approved") {
-        const [conflicts] = await pool.query(
-          `SELECT * FROM bookings WHERE room_id = ? AND status = 'approved' AND id != ? 
+        const conflicts = await pool.query(
+          `SELECT * FROM bookings WHERE room_id = $1 AND status = 'approved' AND id != $2 
          AND (
-           (start_date <= ? AND end_date >= ?) OR
-           (start_date <= ? AND end_date >= ?) OR
-           (start_date >= ? AND end_date <= ?)
+           (start_date <= $3 AND end_date >= $4) OR
+           (start_date <= $5 AND end_date >= $6) OR
+           (start_date >= $7 AND end_date <= $8)
          )`,
           [
             booking.room_id,
@@ -107,13 +111,13 @@ router.patch(
           ]
         );
 
-        if (conflicts.length > 0) {
+        if (conflicts.rows.length > 0) {
           return res
             .status(409)
             .json({ error: "Date conflict with another approved booking" });
         }
 
-        await pool.query("UPDATE bookings SET status = ? , approved_at = NOW() WHERE id = ?",
+        await pool.query("UPDATE bookings SET status = $1 , approved_at = NOW() WHERE id = $2",
           [status,bookingId]
         )
       }
@@ -123,11 +127,11 @@ router.patch(
           return res.status(400).json({ error: "reject response is needed" });
         }
         await pool.query(
-          `UPDATE bookings SET status = ? , reject_response = ? WHERE id = ?`,
+          `UPDATE bookings SET status = $1 , reject_response = $2 WHERE id = $3`,
           [status, reject_response, bookingId]
         );
       } else {
-        await pool.query("UPDATE bookings SET status = ? WHERE id = ?", [
+        await pool.query("UPDATE bookings SET status = $1 WHERE id = $2", [
           status,
           bookingId,
         ]);
@@ -140,5 +144,64 @@ router.patch(
     }
   }
 );
+
+router.patch("/:id/payment", authenticateJWT, isAdmin, async (req, res) => {
+  const bookingId = req.params.id;
+  const userId = req.user.id;
+
+  try {
+    const result = await pool.query(
+      `SELECT b.id, b.start_date, b.end_date, b.payment_status, r.price AS room_price
+       FROM bookings b
+       JOIN rooms r ON b.room_id = r.id
+       WHERE b.id = $1 AND b.user_id = $2`,
+      [bookingId, userId]
+    );
+
+    const booking = result.rows[0];
+
+    if (!booking) return res.status(404).json({ error: "Booking Not Found" });
+    if (booking.payment_status === "paid")
+      return res.status(400).json({ error: "Booking is already paid" });
+
+    const start = new Date(booking.start_date);
+    const end = new Date(booking.end_date);
+    const diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    const baseAmount = parseFloat(booking.room_price) * diffDays;
+    const gstRate = baseAmount <= 7500 ? 0.12 : 0.18;
+    const tax = parseFloat((baseAmount * gstRate).toFixed(2));
+
+    const transactionRef = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const invoiceNo = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    await pool.query(
+      `UPDATE bookings
+      SET payment_status = 'paid',
+      amount = $1,
+      tax = $2,
+      transaction_ref = $3,
+      invoice_no = $4,
+      payment_date = NOW()
+      WHERE id = $5`,
+      [baseAmount, tax, transactionRef, invoiceNo, bookingId]
+    );
+
+    res.json({
+      message: "Payment successfully done!",
+      paymentDetails: {
+        amount: baseAmount,
+        tax,
+        totalAmount: baseAmount + tax,
+        transactionRef,
+        invoiceNo,
+        numberOfDays: diffDays,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 export default router;
