@@ -10,9 +10,9 @@ router.get("/bookings", authenticateJWT, isAdmin, async (req, res) => {
     const { status, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
 
-    let sql = `SELECT b.id, b.start_date, b.end_date, b.status, b.payment_status, b.phone_number, b.feedback, 
-              u.name AS user_name, u.email, 
-              r.name AS room_name, r.image AS room_image
+    let sql = `SELECT b.id, b.booking_ref, b.start_date, b.end_date, b.status, b.payment_status, 
+       b.phone_number, b.feedback, u.name AS user_name, u.email, 
+       r.name AS room_name, r.image AS room_image
               FROM bookings b
               JOIN users u ON b.user_id = u.id
               JOIN rooms r ON b.room_id = r.id`;
@@ -24,12 +24,20 @@ router.get("/bookings", authenticateJWT, isAdmin, async (req, res) => {
       params.push(status);
     }
 
-    sql += " ORDER BY b.start_date DESC LIMIT $" + (params.length + 1) + " OFFSET $" + (params.length + 2);
+    sql +=
+      " ORDER BY b.start_date DESC LIMIT $" +
+      (params.length + 1) +
+      " OFFSET $" +
+      (params.length + 2);
     params.push(parseInt(limit), parseInt(offset));
 
     const result = await pool.query(sql, params);
 
-    res.json({ page: parseInt(page), limit: parseInt(limit), bookings: result.rows });
+    res.json({
+      page: parseInt(page),
+      limit: parseInt(limit),
+      bookings: result.rows,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
@@ -75,10 +83,9 @@ router.patch(
     }
 
     try {
-      const result = await pool.query(
-        `SELECT * FROM bookings WHERE id = $1`,
-        [bookingId]
-      );
+      const result = await pool.query(`SELECT * FROM bookings WHERE id = $1`, [
+        bookingId,
+      ]);
 
       const booking = result.rows[0];
 
@@ -117,9 +124,10 @@ router.patch(
             .json({ error: "Date conflict with another approved booking" });
         }
 
-        await pool.query("UPDATE bookings SET status = $1 , approved_at = NOW() WHERE id = $2",
-          [status,bookingId]
-        )
+        await pool.query(
+          "UPDATE bookings SET status = $1 , approved_at = NOW() WHERE id = $2",
+          [status, bookingId]
+        );
       }
 
       if (status == "rejected") {
@@ -147,20 +155,20 @@ router.patch(
 
 router.patch("/:id/payment", authenticateJWT, isAdmin, async (req, res) => {
   const bookingId = req.params.id;
-  const userId = req.user.id;
 
   try {
+    // Fetch booking with room price
     const result = await pool.query(
       `SELECT b.id, b.start_date, b.end_date, b.payment_status, r.price AS room_price
        FROM bookings b
        JOIN rooms r ON b.room_id = r.id
-       WHERE b.id = $1 AND b.user_id = $2`,
-      [bookingId, userId]
+       WHERE b.id = $1`,
+      [bookingId]
     );
 
     const booking = result.rows[0];
 
-    if (!booking) return res.status(404).json({ error: "Booking Not Found" });
+    if (!booking) return res.status(404).json({ error: "Booking not found" });
     if (booking.payment_status === "paid")
       return res.status(400).json({ error: "Booking is already paid" });
 
@@ -172,18 +180,22 @@ router.patch("/:id/payment", authenticateJWT, isAdmin, async (req, res) => {
     const gstRate = baseAmount <= 7500 ? 0.12 : 0.18;
     const tax = parseFloat((baseAmount * gstRate).toFixed(2));
 
-    const transactionRef = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const transactionRef = `TXN-${Date.now()}-${Math.floor(
+      Math.random() * 1000
+    )}`;
     const invoiceNo = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
+    // Update booking and calculate total_amount in SQL
     await pool.query(
       `UPDATE bookings
-      SET payment_status = 'paid',
-      amount = $1,
-      tax = $2,
-      transaction_ref = $3,
-      invoice_no = $4,
-      payment_date = NOW()
-      WHERE id = $5`,
+   SET payment_status = 'paid',
+       amount = $1,
+       tax = $2,
+       total_amount = $1::numeric + $2::numeric,
+       transaction_ref = $3,
+       invoice_no = $4,
+       payment_date = NOW()
+   WHERE id = $5`,
       [baseAmount, tax, transactionRef, invoiceNo, bookingId]
     );
 
@@ -203,5 +215,49 @@ router.patch("/:id/payment", authenticateJWT, isAdmin, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+// Admin: View admin payments (only those made by admin)
+router.get("/payments", authenticateJWT, isAdmin, async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+
+    // Fetch payments made by users with role 'admin'
+    const result = await pool.query(
+      `SELECT b.id, b.booking_ref, b.start_date, b.end_date, b.payment_status, 
+              b.payment_date, b.total_amount, b.payment_method, r.name AS room_name, 
+              r.image AS room_image, b.invoice_no, b.transaction_ref
+       FROM bookings b
+       JOIN rooms r ON b.room_id = r.id
+       JOIN users u ON b.user_id = u.id
+       WHERE b.payment_status = 'paid' AND u.role = 'admin'
+       ORDER BY b.payment_date DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    const totalResult = await pool.query(
+      `SELECT COUNT(*) 
+       FROM bookings b
+       JOIN users u ON b.user_id = u.id
+       WHERE b.payment_status = 'paid' AND u.role = 'admin'`
+    );
+
+    const total = parseInt(totalResult.rows[0].count);
+
+    res.json({
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      payments: result.rows,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+
 
 export default router;

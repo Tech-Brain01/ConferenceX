@@ -35,6 +35,9 @@ import AdminSupportPage from "./components/AdminSupportPage.jsx";
 import AdminUserControl from "./Pages/admin/AdminUserControl.jsx";
 import Dashboard from "./Pages/admin/Dashboard.jsx";
 import Analytics from "./Pages/admin/Analytics.jsx";
+import ManageMaster from "./Pages/admin/ManageMaster.jsx";
+import ManualBooking from "./Pages/admin/ManualBooking.jsx";
+import RefundRequest from "./Pages/admin/RefundRequest.jsx";
 
 function AppWrapper() {
   const { user, logout, login } = useContext(AuthContext);
@@ -112,9 +115,12 @@ function AppWrapper() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="rooms" element={<ManageRooms />} />
             <Route path="rooms/add" element={<AddRoom />} />
+            <Route path="master" element={<ManageMaster/>} />
             <Route path="rooms/edit/:id" element={<EditRoom />} />
             <Route path="bookings" element={<ManageBookings />} />
+            <Route path="manual/booking" element={<ManualBooking/>} />
             <Route path="bookings/:id" element={<BookingDetail />} />
+            <Route path="refund-request" element={<RefundRequest/>}/>
             <Route path="master" element={<MasterDataManagement />} />
             <Route path="profile" element={<AdminProfile />} />
             <Route path="support" element={<AdminSupportPage />} />

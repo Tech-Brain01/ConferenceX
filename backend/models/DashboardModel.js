@@ -5,7 +5,7 @@ export const getTotalBookings = async (fromDate, toDate) => {
   const params = [];
 
   if (fromDate && toDate) {
-    query += ` AND start_date >= $1 AND end_date <= $2`;
+    query += ` AND start_date >= $1::date AND end_date <= $2::date`;
     params.push(fromDate, toDate);
   }
 
@@ -14,17 +14,19 @@ export const getTotalBookings = async (fromDate, toDate) => {
 };
 
 export const getTotalRevenue = async (fromDate, toDate) => {
-  let query = `SELECT
-    COALESCE(SUM(b.total_amount), 0) AS totalrevenue
-     FROM bookings b
-     JOIN rooms r ON b.room_id = r.id
-     WHERE b.status = 'approved' AND b.payment_status = 'paid'`;
+  let query = `
+    SELECT COALESCE(SUM(b.total_amount), 0) AS totalrevenue
+    FROM bookings b
+    JOIN rooms r ON b.room_id = r.id
+    WHERE b.status = 'approved' AND b.payment_status = 'paid'
+  `;
   const params = [];
 
   if (fromDate && toDate) {
-    query += ` AND start_date >= $1 AND end_date <= $2`;
+    query += ` AND start_date >= $1::date AND end_date <= $2::date`;
     params.push(fromDate, toDate);
   }
+
   const result = await pool.query(query, params);
   return result.rows[0].totalrevenue;
 };
@@ -41,75 +43,90 @@ export const getBookedRooms = async (fromDate, toDate) => {
   let dateCondition = "";
 
   if (fromDate && toDate) {
-    dateCondition = `AND b.start_date >= $1 AND b.end_date <= $2`;
+    dateCondition = `AND b.start_date >= $1::date AND b.end_date <= $2::date`;
     params.push(fromDate, toDate);
   }
+
   const query = `
-     SELECT 
-     r.id,
-     r.name,
-     COUNT(b.id) AS totalbookings,
-     STRING_AGG(b.booking_ref, ', ') AS booking_refs,
-     AVG(DATE_PART('day', b.end_date - b.start_date)) AS avg_booking_duration
-     FROM rooms r
-    LEFT JOIN bookings b  
-      ON r.id = b.room_id 
+    SELECT 
+      r.id,
+      r.name,
+      COUNT(b.id) AS totalbookings,
+      STRING_AGG(b.booking_ref, ', ') AS booking_refs,
+      AVG(DATE_PART('day', (b.end_date - b.start_date))) AS avg_booking_duration
+    FROM rooms r
+    LEFT JOIN bookings b
+      ON r.id = b.room_id
       AND b.status = 'approved'
       AND b.payment_status = 'paid'
       ${dateCondition}
     GROUP BY r.id, r.name
   `;
+
   const result = await pool.query(query, params);
   return result.rows;
 };
+
+
+
 
 export const getUpcomingBookings = async (fromDate, toDate) => {
   let params = [];
   let dateCondition = "";
 
   if (fromDate && toDate) {
-    dateCondition = `AND b.start_date >= $1 AND b.end_date <= $2`;
+    dateCondition = `AND b.start_date >= $1::date AND b.end_date <= $2::date`;
     params.push(fromDate, toDate);
   }
 
-  const query = `SELECT b.id, b.start_date, b.end_date, b.status, r.name AS room_name, u.name AS user_name
+  const query = `
+    SELECT 
+      b.id, b.start_date, b.end_date, b.status, 
+      r.name AS room_name, u.name AS user_name
     FROM bookings b
     JOIN rooms r ON b.room_id = r.id
     JOIN users u ON b.user_id = u.id
-    ${dateCondition}
     WHERE b.start_date >= CURRENT_DATE
+    ${dateCondition}
     ORDER BY b.start_date ASC
-  ;`;
+  `;
 
   const result = await pool.query(query, params);
   return result.rows;
 };
 
 export const getBookingTrends = async (fromDate, toDate) => {
-  const query = `
-   SELECT 
-  TO_CHAR(b.start_date, 'DD-MM-YYYY') AS period,
-  TO_CHAR(b.end_date, 'DD-MM-YYYY') AS end_period,
-  COUNT(*) AS total_bookings,
-  STRING_AGG(DISTINCT b.booking_ref, ', ' ORDER BY b.booking_ref) AS booking_refs,
-  STRING_AGG(DISTINCT r.name, ', ' ORDER BY r.name) AS room_names,
-  STRING_AGG(DISTINCT u.name, ', ' ORDER BY u.name) AS user_names
-FROM bookings b
-JOIN rooms r ON b.room_id = r.id
-JOIN users u ON b.user_id = u.id
-WHERE b.status = 'approved'
-  AND b.payment_status = 'paid'
-  AND ($1 IS NULL OR b.start_date >= $2)
-  AND ($3 IS NULL OR b.start_date <= $4)
-GROUP BY period , end_period
-ORDER BY period
+  let query = `
+    SELECT 
+      TO_CHAR(b.start_date, 'DD-MM-YYYY') AS period,
+      TO_CHAR(b.end_date, 'DD-MM-YYYY') AS end_period,
+      COUNT(*) AS total_bookings,
+      STRING_AGG(DISTINCT b.booking_ref, ', ' ORDER BY b.booking_ref) AS booking_refs,
+      STRING_AGG(DISTINCT r.name, ', ' ORDER BY r.name) AS room_names,
+      STRING_AGG(DISTINCT u.name, ', ' ORDER BY u.name) AS user_names
+    FROM bookings b
+    JOIN rooms r ON b.room_id = r.id
+    JOIN users u ON b.user_id = u.id
+    WHERE b.status = 'approved'
+      AND b.payment_status = 'paid'
   `;
 
-  const params = [fromDate, fromDate, toDate, toDate];
+  const params = [];
+  if (fromDate && toDate) {
+    query += ` AND b.start_date >= $1::date AND b.start_date <= $2::date`;
+    params.push(fromDate, toDate);
+  }
+
+  query += `
+    GROUP BY period, end_period
+    ORDER BY period
+  `;
 
   const result = await pool.query(query, params);
   return result.rows;
 };
+
+
 
 export const getCancelledvsApprovedTrend = async (fromDate, toDate) => {
   let query = `
@@ -127,59 +144,58 @@ export const getCancelledvsApprovedTrend = async (fromDate, toDate) => {
   `;
 
   const params = [];
-
   if (fromDate && toDate) {
-    query += ` WHERE b.start_date BETWEEN $1 AND $2`;
+    query += ` WHERE b.start_date BETWEEN $1::date AND $2::date`;
     params.push(fromDate, toDate);
   }
 
-  query += ` GROUP BY DATE(b.start_date) , DATE(b.end_date) ORDER BY DATE(b.start_date);`;
+  query += ` GROUP BY DATE(b.start_date), DATE(b.end_date) ORDER BY DATE(b.start_date)`;
 
   const result = await pool.query(query, params);
   return result.rows;
 };
+
 
 export const getRevenueTrends = async (fromDate, toDate) => {
   const query = `
-      SELECT DATE(start_date) AS period,
-       DATE(end_date) AS end_period, 
-       COUNT(DISTINCT b.id) AS total_bookings,
-       COALESCE(SUM(b.total_amount), 0) AS totalrevenue,
-       STRING_AGG(DISTINCT r.name, ', ' ORDER BY r.name) AS room_names,
-       COUNT(DISTINCT r.id) AS total_rooms
-FROM bookings b
-JOIN rooms r ON b.room_id = r.id
-WHERE b.status = 'approved' AND b.payment_status = 'paid' 
-  AND start_date BETWEEN $1 AND $2
-GROUP BY DATE(b.start_date) ,  DATE(b.end_date)
-ORDER BY period
-`;
-  const params = [fromDate, toDate];
+    SELECT 
+      DATE(start_date) AS period,
+      DATE(end_date) AS end_period,
+      COUNT(DISTINCT b.id) AS total_bookings,
+      COALESCE(SUM(b.total_amount), 0) AS totalrevenue,
+      STRING_AGG(DISTINCT r.name, ', ' ORDER BY r.name) AS room_names,
+      COUNT(DISTINCT r.id) AS total_rooms
+    FROM bookings b
+    JOIN rooms r ON b.room_id = r.id
+    WHERE b.status = 'approved' AND b.payment_status = 'paid'
+      AND start_date BETWEEN $1::date AND $2::date
+    GROUP BY DATE(b.start_date), DATE(b.end_date)
+    ORDER BY period
+  `;
 
+  const params = [fromDate, toDate];
   const result = await pool.query(query, params);
   return result.rows;
 };
 
+
 export const getRevenueByRoom = async (fromDate, toDate) => {
   const query = `
-  SELECT 
-  
-  COUNT(b.id) AS total_bookings,
-  STRING_AGG(DISTINCT u.name, ', ' ORDER BY u.name) AS user_names,
-  STRING_AGG(DISTINCT b.booking_ref, ', ' ORDER BY b.booking_ref) AS booking_refs,
-  r.name AS room_name, 
-  COALESCE(SUM(b.total_amount), 0) AS totalrevenue
-FROM rooms r
-LEFT JOIN bookings b 
-  ON r.id = b.room_id 
-  AND b.status = 'approved' 
-  AND b.payment_status = 'paid'
-  AND b.start_date BETWEEN $1 AND $2
-LEFT JOIN users u ON b.user_id = u.id
-GROUP BY  r.name
-ORDER BY totalrevenue DESC
-
-
+    SELECT 
+      COUNT(b.id) AS total_bookings,
+      STRING_AGG(DISTINCT u.name, ', ' ORDER BY u.name) AS user_names,
+      STRING_AGG(DISTINCT b.booking_ref, ', ' ORDER BY b.booking_ref) AS booking_refs,
+      r.name AS room_name, 
+      COALESCE(SUM(b.total_amount), 0) AS totalrevenue
+    FROM rooms r
+    LEFT JOIN bookings b 
+      ON r.id = b.room_id 
+      AND b.status = 'approved' 
+      AND b.payment_status = 'paid'
+      AND b.start_date BETWEEN $1::date AND $2::date
+    LEFT JOIN users u ON b.user_id = u.id
+    GROUP BY r.name
+    ORDER BY totalrevenue DESC
   `;
 
   const params = [fromDate, toDate];
@@ -189,46 +205,49 @@ ORDER BY totalrevenue DESC
 
 export const getRevenueByUser = async (fromDate, toDate) => {
   const query = `
-SELECT 
-    u.name AS user_name,
-    COUNT(b.id) AS total_bookings,
-    STRING_AGG(DISTINCT b.booking_ref, ', ' ORDER BY b.booking_ref) AS booking_refs,
-    COALESCE(SUM(b.total_amount), 0) AS total_revenue
-FROM users u
-LEFT JOIN bookings b 
-    ON u.id = b.user_id
-    AND b.status = 'approved' 
-    AND b.payment_status = 'paid'
-    AND b.start_date BETWEEN $1 AND $2
-LEFT JOIN rooms r 
-    ON b.room_id = r.id
-GROUP BY u.id, u.name
-HAVING COALESCE(SUM(b.total_amount), 0) > 0
-ORDER BY total_revenue DESC;`;
+    SELECT 
+      u.name AS user_name,
+      COUNT(b.id) AS total_bookings,
+      STRING_AGG(DISTINCT b.booking_ref, ', ' ORDER BY b.booking_ref) AS booking_refs,
+      COALESCE(SUM(b.total_amount), 0) AS total_revenue
+    FROM users u
+    LEFT JOIN bookings b 
+      ON u.id = b.user_id
+      AND b.status = 'approved' 
+      AND b.payment_status = 'paid'
+      AND b.start_date BETWEEN $1::date AND $2::date
+    LEFT JOIN rooms r ON b.room_id = r.id
+    GROUP BY u.id, u.name
+    HAVING COALESCE(SUM(b.total_amount), 0) > 0
+    ORDER BY total_revenue DESC
+  `;
+
   const params = [fromDate, toDate];
   const result = await pool.query(query, params);
   return result.rows;
 };
 
+
 export const getRevenueLossFromCancellations = async (fromDate, toDate) => {
-  const query = `SELECT  r.id,  COALESCE(SUM(
-        r.price * (DATE_PART('day', b.end_date - b.start_date) + 1)
-      ), 0) AS revenueloss
-     FROM rooms r
-     LEFT JOIN bookings b 
+  const query = `
+    SELECT r.id, COALESCE(SUM(
+          r.price * EXTRACT(day FROM (b.end_date - b.start_date))
+        ), 0) AS revenueloss
+    FROM rooms r
+    LEFT JOIN bookings b 
       ON r.id = b.room_id 
       AND b.status = 'cancelled' 
-      AND b.start_date BETWEEN $1 AND $2
-       GROUP BY r.id
-       ORDER BY revenueloss DESC`;
+      AND b.start_date BETWEEN $1::date AND $2::date
+    GROUP BY r.id
+    ORDER BY revenueloss DESC
+  `;
 
   const params = [fromDate, toDate];
-
   const result = await pool.query(query, params);
 
-  if (!result.rows || result.rows.length === 0) {
-    return 0;
-  }
+  if (!result.rows || result.rows.length === 0) return 0;
 
   return result.rows[0].revenueloss || 0;
 };
+
+

@@ -7,7 +7,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "./ui/table";
+} from "./ui/table.jsx";
 import { format } from "date-fns";
 import {
   Pagination,

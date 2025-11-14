@@ -61,8 +61,8 @@ app.get('/api/captcha', (req, res) => {
 
 app.use("/api/rooms", roomsRouter);
 app.use("/api/admin", adminBookingRoutes);
-app.use("/api/admin/dashboard", dashboardRoutes)
-app.use("/api/bookings", userRoutes  )
+app.use("/api/admin/dashboard", dashboardRoutes);
+app.use("/api/bookings", userRoutes);
 app.use("/api/auth", authRouter);
 app.use("/api/master",masterRoutes);
 app.use("/api/tickets", ticketRoutes);

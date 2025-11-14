@@ -9,28 +9,45 @@ export default function TicketsSidebar({
   selectedTicketId,
   onSelectTicket,
   onCreateTicket,
+  onRaiseRefund,
   isAdmin = false,
 }) {
   return (
-    <Sidebar animate={false} className="bg-white shadow-md">
-      <SidebarBody className="flex flex-col h-full bg-gradient-to-b from-yellow-100 via-yellow-200 to-yellow-300 shadow-inner font-sans">
-        <div className="px-6 py-4 border-b border-gray-300 relative w-full">
-           <h2 className="text-2xl font-extrabold text-gray-800 tracking-tight">
-            {isAdmin ? "User Tickets" : "All Tickets"}
+    <Sidebar animate={false} className="bg-white shadow-sm border-r">
+      <SidebarBody className="flex flex-col h-full bg-gray-50 font-sans">
+
+        {/* HEADER */}
+        <div className="px-5 py-4 border-b bg-white sticky top-0 z-10">
+          <h2 className="text-xl font-bold text-gray-800">
+            {isAdmin ? "User Tickets" : "My Tickets"}
           </h2>
-         
-            {!isAdmin && onCreateTicket && (
-            <button
-              onClick={onCreateTicket}
-              className="mt-3 w-full bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-2 rounded-md transition"
-            >
-              + Create New Ticket
-            </button>
+
+          {/* Buttons */}
+          {!isAdmin && (
+            <div className="space-y-2 mt-3">
+              {onRaiseRefund && (
+                <button
+                  onClick={onRaiseRefund}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md text-sm font-medium transition"
+                >
+                  Raise Refund Request
+                </button>
+              )}
+
+              {onCreateTicket && (
+                <button
+                  onClick={onCreateTicket}
+                  className="w-full bg-gray-800 hover:bg-gray-900 text-white py-2 rounded-md text-sm font-medium transition"
+                >
+                  + Create New Ticket
+                </button>
+              )}
+            </div>
           )}
         </div>
-       
 
-          <nav className="flex flex-col flex-1 overflow-y-auto">
+        {/* TICKET LIST */}
+        <nav className="flex flex-col flex-1 overflow-y-auto p-3 space-y-3">
           {tickets.map((ticket) => (
             <TicketSidebarLink
               key={ticket.id}
@@ -40,7 +57,14 @@ export default function TicketsSidebar({
               isAdmin={isAdmin}
             />
           ))}
+
+          {tickets.length === 0 && (
+            <p className="text-center text-gray-500 text-sm mt-4">
+              No tickets found.
+            </p>
+          )}
         </nav>
+
       </SidebarBody>
     </Sidebar>
   );
@@ -49,8 +73,15 @@ export default function TicketsSidebar({
 function TicketSidebarLink({ ticket, isActive, onClick, isAdmin }) {
   const createdAtDate = new Date(ticket.created_at);
   const formattedDate = isValid(createdAtDate)
-    ? format(createdAtDate, "dd/MM/yyyy")
+    ? format(createdAtDate, "dd MMM yyyy")
     : "Unknown date";
+
+  const statusColor =
+    ticket.status === "open"
+      ? "bg-blue-100 text-blue-700"
+      : ticket.status === "resolved"
+      ? "bg-green-100 text-green-700"
+      : "bg-gray-200 text-gray-700";
 
   return (
     <div
@@ -58,47 +89,48 @@ function TicketSidebarLink({ ticket, isActive, onClick, isAdmin }) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && onClick()}
-      className={`flex items-center justify-between px-6 py-4 mt-5 cursor-pointer select-none rounded-md
-        transition-colors duration-200 ease-in-out
-        ${isActive ? "bg-blue-600 text-white shadow-lg" : "hover:bg-yellow-200"}
+      className={`flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all border
+        ${
+          isActive
+            ? "bg-blue-600 text-white border-blue-700 shadow-md"
+            : "bg-white hover:bg-gray-100 border-gray-200"
+        }
       `}
     >
+      {/* LEFT SIDE */}
       <div className="flex flex-col min-w-0">
         <Label
-          className={`text-base font-semibold truncate ${
+          className={`font-semibold truncate text-sm ${
             isActive ? "text-white" : "text-gray-900"
           }`}
         >
           {ticket.subject}
         </Label>
 
-        {/* For Admin: show user name if available */}
         {isAdmin && ticket.user_name && (
-          <span className={`text-sm mt-1 italic ${isActive ? "text-blue-200" : "text-gray-600"}`}>
+          <span
+            className={`text-xs mt-1 italic ${
+              isActive ? "text-blue-100" : "text-gray-600"
+            }`}
+          >
             by {ticket.user_name}
           </span>
         )}
 
         <span
-          className={`text-sm truncate mt-1 ${
-            isActive ? "text-blue-200" : "text-gray-700"
+          className={`text-xs mt-1 ${
+            isActive ? "text-blue-100" : "text-gray-500"
           }`}
         >
           {formattedDate}
         </span>
       </div>
 
+      {/* STATUS BADGE */}
       <Badge
-        variant={
-          ticket.status === "open"
-            ? "cyan"
-            : ticket.status === "resolved"
-            ? "red"
-            : "default"
-        }
-        className={`ml-4 uppercase tracking-wider px-3 py-1 flex-shrink-0 font-semibold ${
-          isActive ? "bg-white text-blue-600" : ""
-        }`}
+        className={`uppercase text-[10px] px-2 py-1 font-bold rounded-md shrink-0 
+          ${isActive ? "bg-white text-blue-700" : statusColor}
+        `}
       >
         {ticket.status}
       </Badge>
