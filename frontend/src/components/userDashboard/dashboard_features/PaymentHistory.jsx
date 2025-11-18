@@ -121,13 +121,13 @@ function PaymentHistory() {
                     PaymentHistoryData.map((his, idx) => (
                       <TableRow key={idx}>
                         <TableCell>{idx + 1}</TableCell>
-                        <TableCell>{his.Booking_ref || "N/A"}</TableCell>
-                        <TableCell>{his.Transaction_ref || "N/A"}</TableCell>
+                        <TableCell>{his.booking_ref || "N/A"}</TableCell>
+                        <TableCell>{his.transaction_ref || "N/A"}</TableCell>
                         <TableCell>{his.room_name || "N/A"}</TableCell>
-                        <TableCell>{his.Total_Amount || "N/A"}</TableCell>
-                        <TableCell>{his.Method || "N/A"}</TableCell>
+                        <TableCell>{his.total_amount || "N/A"}</TableCell>
+                        <TableCell>{his.method || "N/A"}</TableCell>
                         <TableCell>
-                          {his.Date ? formatPeriod(his.Date) : "N/A"}
+                          {his.date ? formatPeriod(his.date) : "N/A"}
                         </TableCell>
                       </TableRow>
                     ))

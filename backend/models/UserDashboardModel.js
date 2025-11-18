@@ -40,24 +40,36 @@ export const getTotalAmountSpend = async (userId, fromDate, toDate) => {
 };
 
 export const getUserBookingTrend = async (userId, fromDate, toDate) => {
-  const query = `
-  SELECT
-    TO_CHAR(b.start_date, 'YYYY-MM-DD') AS period,
-    COUNT(*) AS total_bookings,
-    STRING_AGG(DISTINCT b.booking_ref, ', ' ORDER BY b.booking_ref) AS booking_refs,
-    STRING_AGG(DISTINCT r.name, ', ' ORDER BY r.name) AS room_names
-  FROM bookings b
-  JOIN rooms r ON b.room_id = r.id
-  WHERE b.status = 'approved'
-    AND b.payment_status = 'paid'
-    AND ($1 IS NULL OR b.user_id = $2)
-    AND ($3 IS NULL OR b.start_date >= $4)
-    AND ($5 IS NULL OR b.start_date <= $6)
-  GROUP BY period
-  ORDER BY period
-`;
+  let query = `
+    SELECT
+      TO_CHAR(b.start_date, 'YYYY-MM-DD') AS period,
+      COUNT(*) AS total_bookings,
+      STRING_AGG(DISTINCT b.booking_ref, ', ' ORDER BY b.booking_ref) AS booking_refs,
+      STRING_AGG(DISTINCT r.name, ', ' ORDER BY r.name) AS room_names
+    FROM bookings b
+    JOIN rooms r ON b.room_id = r.id
+    WHERE b.status = 'approved'
+      AND b.payment_status = 'paid'
+      AND b.user_id = $1
+  `;
 
-  const params = [userId, userId, fromDate, fromDate, toDate, toDate];
+  const params = [userId];
+  let index = 2;
+
+  if (fromDate) {
+    query += ` AND b.start_date >= $${index++}`;
+    params.push(fromDate);
+  }
+
+  if (toDate) {
+    query += ` AND b.start_date <= $${index++}`;
+    params.push(toDate);
+  }
+
+  query += `
+    GROUP BY period
+    ORDER BY period
+  `;
 
   const result = await pool.query(query, params);
   return result.rows;

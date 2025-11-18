@@ -16,7 +16,11 @@ function Invoices() {
   const [downloadInvoiceData, setDownloadInvoiceData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const getDefaultFromDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const getDefaultFromDate = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1
+  );
   const getDefaultToDate = new Date();
 
   const [filterDate, setFilterDate] = useState({
@@ -33,11 +37,18 @@ function Invoices() {
       setLoading(true);
       try {
         const token = localStorage.getItem("token");
-        const from = filterDate?.fromDate ? format(filterDate.fromDate, "yyyy-MM-dd") : null;
-        const to = filterDate?.toDate ? format(filterDate.toDate, "yyyy-MM-dd") : null;
+        const from = filterDate?.fromDate
+          ? format(filterDate.fromDate, "yyyy-MM-dd")
+          : null;
+        const to = filterDate?.toDate
+          ? format(filterDate.toDate, "yyyy-MM-dd")
+          : null;
 
         let url = `http://localhost:8080/api/user/dashboard/download-invoices`;
-        if (from && to) url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+        if (from && to)
+          url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
+            to
+          )}`;
 
         const res = await fetch(url, {
           headers: {
@@ -63,7 +74,9 @@ function Invoices() {
     <div className="min-h-screen bg-gray-100 px-6 py-10">
       <div className="max-w-6xl mx-auto">
         <header className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-indigo-700 mb-2">Download Invoice</h1>
+          <h1 className="text-4xl font-bold text-indigo-700 mb-2">
+            Download Invoice
+          </h1>
           <p className="text-gray-600">View and Download Your Invoices</p>
           <div className="mt-10 flex items-center justify-center">
             <FilterBar
@@ -98,16 +111,21 @@ function Invoices() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {downloadInvoiceData.length > 0 ? (
+                  {Array.isArray(downloadInvoiceData) &&
+                  downloadInvoiceData.length > 0 ? (
                     downloadInvoiceData.map((iv, idx) => (
-                      <TableRow key={idx}>
+                      <TableRow key={iv?.Invoice_no || idx}>
                         <TableCell>{idx + 1}</TableCell>
-                        <TableCell>{iv. Invoice_no}</TableCell>
-                        <TableCell>{iv.room_name}</TableCell>
-                        <TableCell>{format(parseISO(iv.Issue_date), "MMM dd, yyyy")}</TableCell>
-                        <TableCell>₹{iv.Amt}</TableCell>
-                        <TableCell>₹{iv.gst}</TableCell>
-                        <TableCell>₹{iv.Total_Amt}</TableCell>
+                        <TableCell>{iv?.invoice_no || "-"}</TableCell>
+                        <TableCell>{iv?.room_name || "-"}</TableCell>
+                        <TableCell>
+                          {iv?.issue_date
+                            ? format(parseISO(iv.issue_date), "MMM dd, yyyy")
+                            : "-"}
+                        </TableCell>
+                        <TableCell>₹{iv?.amt ?? 0}</TableCell>
+                        <TableCell>₹{iv?.gst ?? 0}</TableCell>
+                        <TableCell>₹{iv?.total_amt ?? 0}</TableCell>
                         <TableCell>
                           <InvoicePDF invoice={iv} />
                         </TableCell>
@@ -115,7 +133,10 @@ function Invoices() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan="8" className="text-center py-4 text-gray-500">
+                      <TableCell
+                        colSpan={8}
+                        className="text-center py-4 text-gray-500"
+                      >
                         No invoices found.
                       </TableCell>
                     </TableRow>

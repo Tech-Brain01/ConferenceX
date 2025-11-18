@@ -1,25 +1,38 @@
 import express from "express";
-import { authenticateJWT, isAdmin } from "../middleware/auth.js";
+import { authenticateJWT, isAdmin } from "../middleware/authMiddleware.js";
 
-import { submitRefund, getMyRefundRequests } from "./refund.controller.js";
-import { 
-  getAllRefundRequests,
-  approveFullRefund,
-  approvePartialRefund,
-  rejectRefund
-} from "../controller/RefundAdminController.js";
+import {
+  createRefundRequestController,
+  getRefundsByUserController,
+  getAllRefundsForAdminController,
+  getRefundDetailsForAdminController,
+  processRefundController,
+} from "../controller/RefundController.js";
 
 const router = express.Router();
 
-// user route
-router.post("/request", authenticateJWT, submitRefund);
-router.get("/my-requests", authenticateJWT, getMyRefundRequests);
+router.post("/create", authenticateJWT, createRefundRequestController);
 
-// Admin Route
-router.get("/admin/all", authenticateJWT, isAdmin, getAllRefundRequests);
+router.get("/my-refunds", authenticateJWT, getRefundsByUserController);
 
-router.put("/admin/approve/full/:id", authenticateJWT, isAdmin, approveFullRefund);
-router.put("/admin/approve/partial/:id", authenticateJWT, isAdmin, approvePartialRefund);
-router.put("/admin/reject/:id", authenticateJWT, isAdmin, rejectRefund);
+router.get(
+  "/admin/all",
+  authenticateJWT,
+  isAdmin,
+  getAllRefundsForAdminController
+);
 
+router.get(
+  "/admin/details/:id",
+  authenticateJWT,
+  isAdmin,
+  getRefundDetailsForAdminController
+);
+
+router.put(
+  "/admin/process/:id",
+  authenticateJWT,
+  isAdmin,
+  processRefundController
+);
 export default router;

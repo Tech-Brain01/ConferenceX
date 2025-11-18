@@ -119,6 +119,8 @@ const Profile = () => {
     }
   };
 
+  console.log(token);
+
   const fetchUser = async () => {
     setLoading(true);
     try {

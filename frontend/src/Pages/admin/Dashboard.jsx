@@ -5,6 +5,8 @@ import UpcomingBookings from "../../components/UpcomingBookings.jsx";
 import BookingTrend from "../../components/BookingTrend.jsx";
 import FilterBar from "../../components/FilterBar.jsx";
 import {DownloadDashboardExcelButton} from "../../components/ExcelButton.jsx";
+import AvailableRoomsStats from "../../components/AvailableRoom.jsx";
+
 
 const Dashboard = () => {
   const getDefaultFromDate = new Date(
@@ -51,6 +53,14 @@ const Dashboard = () => {
         </h2>
         <BookedRoomsStats filterDate={filterDate} />
       </section>
+
+      <section className="mb-12">
+  <h2 className="text-xl font-semibold mb-6 mt-6 text-gray-800">
+    Available Rooms Stats
+  </h2>
+  <AvailableRoomsStats filterDate={filterDate} />
+</section>
+
 
       <section className="mb-12">
         <h2 className="text-xl font-semibold mb-6 mt-6 text-gray-800">Upcoming Bookings</h2>

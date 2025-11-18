@@ -7,10 +7,10 @@ import {
   addMessage,
   createTicket,
 } from "../../service/ticketService.js";
+import { createRefundRequest } from "../../service/refundService.js";
 
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -27,18 +27,18 @@ export default function SupportPage() {
   const [status, setStatus] = useState(null);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [dialogMode, setDialogMode] = useState("ticket"); 
+  const [dialogMode, setDialogMode] = useState("ticket");
   const [newSubject, setNewSubject] = useState("");
 
-  // Refund form fields
   const [bookingRef, setBookingRef] = useState("");
   const [txnNo, setTxnNo] = useState("");
-  const [invoiceNo, setInvoiceNo] = useState("");
+  const [roomName, setRoomName] = useState("");
   const [refundMessage, setRefundMessage] = useState("");
 
-  const userId = parseInt(localStorage.getItem("userId")) || 20;
+  const userId = parseInt(localStorage.getItem("userId"));
   const token = localStorage.getItem("token");
 
+  // Fetch all tickets
   async function fetchTickets() {
     const data = await getMyTickets(token);
     if (data.success) setTickets(data.tickets);
@@ -48,6 +48,7 @@ export default function SupportPage() {
     fetchTickets();
   }, []);
 
+  // Fetch messages for selected ticket
   useEffect(() => {
     if (!selectedTicketId) return;
 
@@ -60,7 +61,6 @@ export default function SupportPage() {
             isUser: msg.sender_id === userId,
           }))
         );
-
         setStatus(data.ticket.status);
       }
     }
@@ -68,6 +68,7 @@ export default function SupportPage() {
   }, [selectedTicketId]);
 
   const handleSend = async (msgText) => {
+    if (!msgText.trim()) return;
     await addMessage(selectedTicketId, msgText, token);
     setMessages((prev) => [...prev, { text: msgText, isUser: true }]);
   };
@@ -84,10 +85,9 @@ export default function SupportPage() {
 
   const handleSubmit = async () => {
     if (dialogMode === "ticket") {
-      if (!newSubject.trim()) return;
+      if (!newSubject.trim()) return alert("Subject cannot be empty.");
 
       const res = await createTicket({ subject: newSubject.trim() }, token);
-
       if (res.success && res.ticket) {
         setNewSubject("");
         setIsDialogOpen(false);
@@ -96,42 +96,54 @@ export default function SupportPage() {
       } else {
         alert("Failed to create ticket");
       }
+      return;
+    }
 
-    } else if (dialogMode === "refund") {
-      // Form validation
-      if (!bookingRef || !txnNo || !invoiceNo) {
-        alert("Please fill in all refund fields.");
-        return;
-      }
+    // Inside SupportPage.jsx, handleSubmit() for refund
+    if (dialogMode === "refund") {
+      console.log("DEBUG: Refund Input Values:", {
+        bookingRef,
+        txnNo,
+        roomName,
+        refundMessage,
+      });
 
+      // Validation
+      if (!bookingRef.trim()) return alert("Booking reference is required.");
+      if (!txnNo.trim()) return alert("Transaction number is required.");
+      if (!roomName.trim()) return alert("Room name is required.");
+      if (!refundMessage.trim()) return alert("Refund reason is required.");
+
+      // Payload that matches the backend controller
       const refundPayload = {
-        subject: `Refund Request - Booking ${bookingRef}`,
-        details: {
-          bookingRef,
-          txnNo,
-          invoiceNo,
-          message: refundMessage,
-        },
+        bookingRef: bookingRef.trim(),
+        txnNo: txnNo.trim(),
+        roomName: roomName.trim(),
+        reason: refundMessage.trim(),
       };
 
-      const res = await createTicket(refundPayload, token);
+      console.log("DEBUG: Refund Payload Sent:", refundPayload);
 
-      if (res.success && res.ticket) {
+      const res = await createRefundRequest(refundPayload, token);
+
+      console.log("DEBUG: Refund API Response:", res);
+
+      if (res.success) {
         setBookingRef("");
         setTxnNo("");
-        setInvoiceNo("");
+        setRoomName("");
         setRefundMessage("");
         setIsDialogOpen(false);
-        await fetchTickets();
-        setSelectedTicketId(res.ticket.id.toString());
+        alert("Refund request submitted successfully.");
       } else {
-        alert("Failed to raise refund request.");
+        alert(res.error || "Failed to submit refund request.");
       }
     }
   };
 
   return (
     <div className="flex h-screen">
+      {/* Sidebar */}
       <TicketsSidebar
         tickets={tickets}
         selectedTicketId={selectedTicketId}
@@ -140,13 +152,10 @@ export default function SupportPage() {
         onRaiseRefund={openRefundDialog}
       />
 
+      {/* Chat Window */}
       <div className="flex-grow flex flex-col">
         {selectedTicketId ? (
-          <ChatWindow
-            messages={messages}
-            onSend={handleSend}
-            status={status}
-          />
+          <ChatWindow messages={messages} onSend={handleSend} status={status} />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
             Select a ticket to start chatting
@@ -154,15 +163,15 @@ export default function SupportPage() {
         )}
       </div>
 
-      {/* Unified Dialog */}
+      {/* Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md space-y-4">
-
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === "ticket" ? "Create New Ticket" : "Raise Refund Request"}
+              {dialogMode === "ticket"
+                ? "Create New Ticket"
+                : "Raise Refund Request"}
             </DialogTitle>
-
             <DialogDescription>
               {dialogMode === "ticket"
                 ? "Please enter the subject of your new support ticket."
@@ -182,7 +191,6 @@ export default function SupportPage() {
           {/* Refund Form */}
           {dialogMode === "refund" && (
             <div className="space-y-3">
-
               <Input
                 placeholder="Enter Booking Reference No."
                 value={bookingRef}
@@ -190,15 +198,15 @@ export default function SupportPage() {
               />
 
               <Input
-                placeholder="Enter Transaction No."
+                placeholder="Enter Transaction Number"
                 value={txnNo}
                 onChange={(e) => setTxnNo(e.target.value)}
               />
 
               <Input
-                placeholder="Enter Invoice No."
-                value={invoiceNo}
-                onChange={(e) => setInvoiceNo(e.target.value)}
+                placeholder="Enter Room Name"
+                value={roomName}
+                onChange={(e) => setRoomName(e.target.value)}
               />
 
               <textarea
@@ -210,16 +218,14 @@ export default function SupportPage() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex justify-end space-x-2">
             <Button variant="secondary" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-
             <Button onClick={handleSubmit}>
               {dialogMode === "ticket" ? "Create" : "Submit Refund"}
             </Button>
           </DialogFooter>
-
         </DialogContent>
       </Dialog>
     </div>

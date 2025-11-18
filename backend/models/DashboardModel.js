@@ -47,25 +47,26 @@ export const getBookedRooms = async (fromDate, toDate) => {
     params.push(fromDate, toDate);
   }
 
-  const query = `
-    SELECT 
-      r.id,
-      r.name,
-      COUNT(b.id) AS totalbookings,
-      STRING_AGG(b.booking_ref, ', ') AS booking_refs,
-      AVG(DATE_PART('day', (b.end_date - b.start_date))) AS avg_booking_duration
-    FROM rooms r
-    LEFT JOIN bookings b
-      ON r.id = b.room_id
-      AND b.status = 'approved'
-      AND b.payment_status = 'paid'
-      ${dateCondition}
-    GROUP BY r.id, r.name
-  `;
+ const query = `
+  SELECT 
+    r.id,
+    r.name,
+    COUNT(b.id) AS totalbookings,
+    STRING_AGG(b.booking_ref, ', ') AS booking_refs,
+    AVG(b.end_date - b.start_date) AS avg_booking_duration
+  FROM rooms r
+  LEFT JOIN bookings b
+    ON r.id = b.room_id
+    AND b.status = 'approved'
+    AND b.payment_status = 'paid'
+    ${dateCondition}
+  GROUP BY r.id, r.name
+`;
 
   const result = await pool.query(query, params);
   return result.rows;
 };
+
 
 
 
@@ -250,4 +251,72 @@ export const getRevenueLossFromCancellations = async (fromDate, toDate) => {
   return result.rows[0].revenueloss || 0;
 };
 
+export const getAvailableRooms = async (fromDate, toDate) => {
+  const query = `
+    SELECT 
+      r.id,
+      r.name,
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'from', b.start_date,
+            'to', b.end_date
+          ) ORDER BY b.start_date
+        ) FILTER (WHERE b.id IS NOT NULL),
+        '[]'
+      ) AS bookings
+    FROM rooms r
+    LEFT JOIN bookings b 
+      ON r.id = b.room_id
+      AND b.status = 'approved'
+      AND b.payment_status = 'paid'
+      AND b.start_date <= $2::date
+      AND b.end_date >= $1::date
+    GROUP BY r.id;
+  `;
+
+  const result = await pool.query(query, [fromDate, toDate]);
+
+  const rooms = result.rows;
+
+  return rooms.map((room) => {
+    const bookings = room.bookings.sort(
+      (a, b) => new Date(a.from) - new Date(b.from)
+    );
+
+    const available = [];
+    let curStart = new Date(fromDate);
+    const filterEnd = new Date(toDate);
+
+    bookings.forEach((b) => {
+      const bStart = new Date(b.from);
+      const bEnd = new Date(b.to);
+
+      // If gap exists between current start and this booking start
+      if (curStart < bStart) {
+        available.push({
+          from: new Date(curStart),
+          to: new Date(bStart.setDate(bStart.getDate() - 1)),
+        });
+      }
+
+      // Move current start after booking end
+      curStart = new Date(bEnd.setDate(bEnd.getDate() + 1));
+    });
+
+    // Last gap (after last booking)
+    if (curStart <= filterEnd) {
+      available.push({
+        from: curStart,
+        to: filterEnd,
+      });
+    }
+
+    return {
+      id: room.id,
+      name: room.name,
+      available_ranges: available,
+    };
+  });
+};
 

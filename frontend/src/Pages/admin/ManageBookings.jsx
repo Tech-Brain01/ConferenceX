@@ -70,6 +70,8 @@ const ManageBookings = () => {
     setUpdating(true);
     const token = localStorage.getItem("token");
 
+    
+
     try {
       const body =
         status === "rejected"
