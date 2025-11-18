@@ -319,6 +319,7 @@ router.patch("/:id/payment", authenticateJWT, async (req, res) => {
 
     const gstRate = baseAmount <= 7500 ? 0.05 : 0.18;
     const tax = parseFloat((baseAmount * gstRate).toFixed(2));
+    const total_amount = baseAmount + tax ;
 
     const transactionRef = `TXN-${Date.now()}-${Math.floor(
       Math.random() * 1000
@@ -330,11 +331,12 @@ router.patch("/:id/payment", authenticateJWT, async (req, res) => {
        SET payment_status = 'paid',
            amount = $1,
            tax = $2,
-           transaction_ref = $3,
-           invoice_no = $4,
+           total_amount = $3,
+           transaction_ref = $4,
+           invoice_no = $5,
            payment_date = NOW()
-       WHERE id = $5`,
-      [baseAmount, tax, transactionRef, invoiceNo, bookingId]
+       WHERE id = $6`,
+      [baseAmount, tax, total_amount, transactionRef, invoiceNo, bookingId]
     );
 
     res.json({

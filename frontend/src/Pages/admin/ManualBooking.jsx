@@ -13,6 +13,7 @@ const ManualBooking = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
+
       const res = await fetch("http://localhost:8080/api/admin/bookings", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -37,26 +38,31 @@ const ManualBooking = () => {
     fetchBookings();
   }, []);
 
-  // Payment booking: first unpaid approved booking
+  // Show pending OR approved AND unpaid
   const paymentBooking = bookings.find(
     (b) =>
       b.payment_status?.toLowerCase() !== "paid" &&
-      b.status?.toLowerCase() === "approved"
+      ["approved", "pending"].includes(b.status?.toLowerCase())
   );
 
+  // Placeholder Edit handler
   const handleEdit = (booking) => {
-    toast("Edit feature coming soon!");
+    console.log("Edit booking:", booking);
+    toast.info("Edit booking feature coming soon");
   };
 
+  // Placeholder cancel handler
   const handleCancel = (booking) => {
-    toast("Cancel feature coming soon!");
+    console.log("Cancel booking:", booking);
+    toast.info("Cancel feature coming soon");
   };
 
+  // Payment Handler
   const handlePayment = async (booking) => {
     try {
       const token = localStorage.getItem("token");
 
-      // Optimistically mark as paid
+      // Optimistic update
       setBookings((prev) =>
         prev.map((b) =>
           b.id === booking.id ? { ...b, payment_status: "paid" } : b
@@ -73,13 +79,12 @@ const ManualBooking = () => {
         `Payment successful: ₹${res.data.paymentDetails.totalAmount}`
       );
 
-      // Refresh bookings to ensure backend consistency
-      fetchBookings();
+      fetchBookings(); // sync
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.error || "Payment failed");
 
-      // Revert optimistic update if payment fails
+      // revert
       setBookings((prev) =>
         prev.map((b) =>
           b.id === booking.id ? { ...b, payment_status: "unpaid" } : b
@@ -98,7 +103,7 @@ const ManualBooking = () => {
 
   return (
     <div className="p-6 space-y-6">
-      {/* ---------------- PAYMENT REQUEST CARD ---------------- */}
+      {/* Payment Request Card */}
       <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
         <h2 className="text-lg font-semibold mb-4 text-gray-700">
           Payment Requests
@@ -116,7 +121,7 @@ const ManualBooking = () => {
         )}
       </div>
 
-      {/* ---------------- BOOKING TABLE CARD ---------------- */}
+      {/* Table */}
       <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
         <h2 className="text-lg font-semibold mb-4 text-gray-700">
           Bookings Made

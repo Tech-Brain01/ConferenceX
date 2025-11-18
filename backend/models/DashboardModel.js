@@ -47,7 +47,7 @@ export const getBookedRooms = async (fromDate, toDate) => {
     params.push(fromDate, toDate);
   }
 
- const query = `
+  const query = `
   SELECT 
     r.id,
     r.name,
@@ -66,10 +66,6 @@ export const getBookedRooms = async (fromDate, toDate) => {
   const result = await pool.query(query, params);
   return result.rows;
 };
-
-
-
-
 
 export const getUpcomingBookings = async (fromDate, toDate) => {
   let params = [];
@@ -127,8 +123,6 @@ export const getBookingTrends = async (fromDate, toDate) => {
   return result.rows;
 };
 
-
-
 export const getCancelledvsApprovedTrend = async (fromDate, toDate) => {
   let query = `
     SELECT 
@@ -156,7 +150,6 @@ export const getCancelledvsApprovedTrend = async (fromDate, toDate) => {
   return result.rows;
 };
 
-
 export const getRevenueTrends = async (fromDate, toDate) => {
   const query = `
     SELECT 
@@ -178,7 +171,6 @@ export const getRevenueTrends = async (fromDate, toDate) => {
   const result = await pool.query(query, params);
   return result.rows;
 };
-
 
 export const getRevenueByRoom = async (fromDate, toDate) => {
   const query = `
@@ -228,28 +220,24 @@ export const getRevenueByUser = async (fromDate, toDate) => {
   return result.rows;
 };
 
-
 export const getRevenueLossFromCancellations = async (fromDate, toDate) => {
   const query = `
-    SELECT r.id, COALESCE(SUM(
-          r.price * EXTRACT(day FROM (b.end_date - b.start_date))
-        ), 0) AS revenueloss
-    FROM rooms r
-    LEFT JOIN bookings b 
-      ON r.id = b.room_id 
-      AND b.status = 'cancelled' 
+    SELECT 
+      COALESCE(SUM(
+        r.price * (DATE_PART('day', b.end_date::timestamp - b.start_date::timestamp))
+      ), 0) AS revenueloss
+    FROM bookings b
+    JOIN rooms r ON r.id = b.room_id
+    WHERE b.status = 'cancelled'
       AND b.start_date BETWEEN $1::date AND $2::date
-    GROUP BY r.id
-    ORDER BY revenueloss DESC
   `;
 
   const params = [fromDate, toDate];
   const result = await pool.query(query, params);
 
-  if (!result.rows || result.rows.length === 0) return 0;
-
-  return result.rows[0].revenueloss || 0;
+  return Number(result.rows[0].revenueloss) || 0;
 };
+
 
 export const getAvailableRooms = async (fromDate, toDate) => {
   const query = `
@@ -319,4 +307,3 @@ export const getAvailableRooms = async (fromDate, toDate) => {
     };
   });
 };
-
