@@ -14,13 +14,14 @@ router.get("/bookings/export", authenticateJWT, isAdmin, async (req, res) => {
 
     const params = [];
     if (status) {
-      sql += " WHERE b.status = ?";
+      sql += " WHERE b.status = $1";
       params.push(status);
     }
 
     sql += " ORDER BY b.start_date DESC";
 
-    const [bookings] = await pool.query(sql, params);
+    const result = await pool.query(sql, params);
+    const bookings = result.rows;
 
     // Create workbook and worksheet
     const workbook = new ExcelJS.Workbook();

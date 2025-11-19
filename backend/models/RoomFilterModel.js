@@ -1,6 +1,11 @@
 import pool from "./db.js";
 
-export const filterRooms = async (searchTerm, sortOrder) => {
+export const filterRooms = async (searchTerm, filterBy, sortOrder) => {
+  if (!searchTerm) return [];
+
+  if (!["name", "feature"].includes(filterBy)) {
+    throw new Error("Filter must be 'name' or 'feature'");
+  }
 
   let query = `
     SELECT 
@@ -10,33 +15,38 @@ export const filterRooms = async (searchTerm, sortOrder) => {
       r.price,
       c.capacity,
       r.image,
-      GROUP_CONCAT(DISTINCT f.name ORDER BY f.name ASC SEPARATOR ',') AS features
+      STRING_AGG(DISTINCT f.name, ',' ORDER BY f.name ASC) AS features
     FROM rooms r
-    LEFT JOIN capacities c ON r.capacity_id = c.id
+    LEFT JOIN capacity c ON r.id = c.room_id
     LEFT JOIN room_features rf ON r.id = rf.room_id
     LEFT JOIN features f ON rf.feature_id = f.id
   `;
 
   const params = [];
 
-  if (searchTerm) {
-    query += " WHERE r.name LIKE ?";
+  if (filterBy === "name") {
+    query += " WHERE r.name ILIKE $1";
+    params.push(`%${searchTerm}%`);
+  } else if (filterBy === "feature") {
+    query += " WHERE f.name ILIKE $1";
     params.push(`%${searchTerm}%`);
   }
 
-  query += " GROUP BY r.id";
+  query += " GROUP BY r.id, r.name, r.location, r.price, c.capacity, r.image";
 
   if (sortOrder === "low-to-high") {
     query += " ORDER BY r.price ASC";
   } else if (sortOrder === "high-to-low") {
     query += " ORDER BY r.price DESC";
+  } else {
+    query += " ORDER BY r.name ASC";
   }
 
   query += " LIMIT 10";
 
-  const [rows] = await pool.query(query, params);
+  const result = await pool.query(query, params);
 
-  return rows.map((r) => ({
+  return result.rows.map((r) => ({
     ...r,
     features: r.features ? r.features.split(",") : [],
   }));

@@ -71,6 +71,8 @@ const LoginPage = ({ onLogin }) => {
       if (res.ok) {
         localStorage.setItem("token", data.token);
 
+    
+
         const decodedUser = jwtDecode(data.token);
         onLogin(decodedUser);
 

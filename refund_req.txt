@@ -1,0 +1,41 @@
+CREATE TYPE refund_status AS ENUM (
+    'PENDING',
+    'REJECTED',
+    'APPROVED_FULL',
+    'APPROVED_PARTIAL'
+);
+
+
+CREATE TABLE conference_booking.refund_requests (
+    id BIGSERIAL PRIMARY KEY,
+
+    user_id BIGINT NOT NULL REFERENCES conference_booking.users(id),
+
+    booking_ref VARCHAR(100) NOT NULL,
+    room_name VARCHAR(255) NOT NULL,
+    txn_no VARCHAR(100) NOT NULL,
+
+    user_reason TEXT NOT NULL,
+
+    status refund_status DEFAULT 'PENDING',
+
+    admin_reason TEXT,
+    partial_amount NUMERIC(10,2),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_refund_requests_timestamp
+BEFORE UPDATE ON conference_booking.refund_requests
+FOR EACH ROW
+EXECUTE FUNCTION update_timestamp();

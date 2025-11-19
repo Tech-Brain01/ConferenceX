@@ -58,14 +58,14 @@ const InvoiceDocument = ({ invoice }) => (
       {/* Invoice Header */}
       <View style={styles.section}>
         <Text style={styles.headerText}>
-          <Text style={styles.bold}>Invoice No:</Text> {invoice.Invoice_no}
+          <Text style={styles.bold}>Invoice No:</Text> {invoice.invoice_no}
         </Text>
         <Text style={styles.headerText}>
           <Text style={styles.bold}>Booking Ref:</Text> {invoice.booking_ref}
         </Text>
         <Text style={styles.headerText}>
           <Text style={styles.bold}>Issued:</Text>{" "}
-          {new Date(invoice.Issue_date).toLocaleDateString()}
+          {new Date(invoice.issue_date).toLocaleDateString()}
         </Text>
         <Text style={styles.headerText}>
           <Text style={styles.bold}>Status:</Text> {invoice.status}
@@ -98,15 +98,15 @@ const InvoiceDocument = ({ invoice }) => (
         </View>
         <View style={styles.tableRow}>
           <Text style={styles.cell}>Room Booking</Text>
-          <Text style={styles.cell}>₹{invoice.Amt}</Text>
+          <Text style={styles.cell}>₹{invoice.amt}</Text>
           <Text style={styles.cell}>₹{invoice.gst}</Text>
-          <Text style={styles.cell}>₹{invoice.Total_Amt}</Text>
+          <Text style={styles.cell}>₹{invoice.total_amt}</Text>
         </View>
         <View style={styles.totalRow}>
           <Text style={styles.cell}></Text>
           <Text style={styles.cell}></Text>
           <Text style={styles.cell}>Grand Total</Text>
-          <Text style={styles.cell}>₹{invoice.Total_Amt}</Text>
+          <Text style={styles.cell}>₹{invoice.total_amt}</Text>
         </View>
       </View>
 
@@ -121,7 +121,7 @@ const InvoiceDocument = ({ invoice }) => (
 const InvoicePDF = ({ invoice }) => (
   <PDFDownloadLink
     document={<InvoiceDocument invoice={invoice} />}
-    fileName={`invoice_${invoice.Invoice_no}.pdf`}
+    fileName={`invoice_${invoice.invoice_no}.pdf`}
     style={{
       backgroundColor: "#1d4ed8",
       color: "white",

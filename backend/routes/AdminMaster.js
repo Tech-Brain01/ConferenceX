@@ -8,17 +8,17 @@ const router = express.Router();
 
 router.get("/capacity", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const rows = await pool.query(`
       SELECT 
         c.*,
         COUNT(r.id) AS used_count,
-        GROUP_CONCAT(r.name SEPARATOR ', ') AS used_rooms
+        STRING_AGG(r.name, ', ') AS used_rooms
       FROM capacities c
       LEFT JOIN rooms r ON c.id = r.capacity_id
       GROUP BY c.id
       ORDER BY c.capacity ASC
     `);
-    res.json(rows);
+    res.json(rows.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -28,11 +28,11 @@ router.post("/capacity", authenticateJWT, isAdmin, async (req, res) => {
   const { capacity } = req.body;
 
   try {
-    const [rows] = await pool.query(
-      `INSERT INTO capacities (capacity) VALUES (?)`,
+    const rows = await pool.query(
+      `INSERT INTO capacities (capacity) VALUES ($1) RETURNING id`,
       [capacity]
     );
-    res.status(201).json({ id: rows.insertId, capacity });
+    res.status(201).json({ id: rows.rows[0].id, capacity });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -43,11 +43,11 @@ router.patch("/capacity/:id", authenticateJWT, isAdmin, async (req, res) => {
   const { capacity, hidden } = req.body;
 
   try {
-    const [result] = await pool.query(
-      `UPDATE capacities SET capacity = COALESCE(?, capacity), hidden = COALESCE(?, hidden) WHERE id = ?`,
+    const result = await pool.query(
+      `UPDATE capacities SET capacity = COALESCE($1, capacity), hidden = COALESCE($2, hidden) WHERE id = $3`,
       [capacity, hidden, id]
     );
-    if (result.affectedRows === 0)
+    if (result.rowCount === 0)
       return res.status(404).json({ error: "Capacity not found" });
     res.json({ message: "capacity updated" });
   } catch (err) {
@@ -58,20 +58,20 @@ router.patch("/capacity/:id", authenticateJWT, isAdmin, async (req, res) => {
 router.delete("/capacity/:id", authenticateJWT, isAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    const [[{ count }]] = await pool.query(
-      `SELECT COUNT(*) as count FROM rooms WHERE capacity_id = ?`,
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as count FROM rooms WHERE capacity_id = $1`,
       [id]
     );
-    if (count > 0) {
+    if (countResult.rows[0].count > 0) {
       return res.status(400).json({
         error: "Capacity is currently used in rooms and cannot be deleted.",
       });
     }
 
-    const [result] = await pool.query(`DELETE from capacities WHERE id = ?`, [
+    const result = await pool.query(`DELETE from capacities WHERE id = $1`, [
       id,
     ]);
-    if (result.affectedRows === 0)
+    if (result.rowCount === 0)
       return res.status(404).json({ error: "Capacity not found" });
 
     res.json({ message: "Capacity deleted" });
@@ -85,11 +85,11 @@ router.delete("/capacity/:id", authenticateJWT, isAdmin, async (req, res) => {
 
 router.get("/feature", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const rows = await pool.query(`
   SELECT 
     f.*,
     COUNT(rf.room_id) AS used_count,
-    GROUP_CONCAT(r.name SEPARATOR ', ') AS used_rooms
+    STRING_AGG(r.name, ', ') AS used_rooms
   FROM features f
   LEFT JOIN room_features rf ON f.id = rf.feature_id
   LEFT JOIN rooms r ON rf.room_id = r.id
@@ -97,7 +97,7 @@ router.get("/feature", async (req, res) => {
   ORDER BY f.name ASC
 `);
 
-    res.json(rows);
+    res.json(rows.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -106,10 +106,10 @@ router.get("/feature", async (req, res) => {
 router.post("/feature", authenticateJWT, isAdmin, async (req, res) => {
   const { name } = req.body;
   try {
-    const [rows] = await pool.query(`INSERT INTO features (name) VALUES (?)`, [
+    const rows = await pool.query(`INSERT INTO features (name) VALUES ($1) RETURNING id`, [
       name,
     ]);
-    res.status(201).json({ id: rows.insertId, name });
+    res.status(201).json({ id: rows.rows[0].id, name });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -120,11 +120,11 @@ router.patch("/feature/:id", authenticateJWT, isAdmin, async (req, res) => {
   const { name, hidden } = req.body;
 
   try {
-    const [result] = await pool.query(
-      `UPDATE features SET name = COALESCE(?, name), hidden = COALESCE(?, hidden) WHERE id = ?`,
+    const result = await pool.query(
+      `UPDATE features SET name = COALESCE($1, name), hidden = COALESCE($2, hidden) WHERE id = $3`,
       [name, hidden, id]
     );
-    if (result.affectedRows === 0)
+    if (result.rowCount === 0)
       return res.status(404).json({ err: "feature not found" });
     res.json({ message: "feature updated" });
   } catch (err) {
@@ -135,20 +135,20 @@ router.patch("/feature/:id", authenticateJWT, isAdmin, async (req, res) => {
 router.delete("/feature/:id", authenticateJWT, isAdmin, async (req, res) => {
   const { id } = req.params;
   try {
-    const [[{ count }]] = await pool.query(
-      `SELECT COUNT(*) as count FROM room_features WHERE feature_id = ?`,
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as count FROM room_features WHERE feature_id = $1`,
       [id]
     );
-    if (count > 0) {
+    if (countResult.rows[0].count > 0) {
       return res.status(400).json({
         error: "Feature is currently used in rooms and cannot be deleted.",
       });
     }
 
-    const [result] = await pool.query(`DELETE FROM features WHERE id = ?`, [
+    const result = await pool.query(`DELETE FROM features WHERE id = $1`, [
       id,
     ]);
-    if (result.affectedRows === 0)
+    if (result.rowCount === 0)
       return res.status(404).json({ error: "Feature not found" });
 
     res.json({ message: "Feature deleted" });

@@ -12,6 +12,7 @@ import session from 'express-session';
 import svgCaptcha from 'svg-captcha';
 import userDashboardRoutes from "./routes/UserDashboardRoute.js";
 import searchRoom from "./routes/RoomFilterRoutes.js";
+import RefundRoutes from "./routes/RefundRoutes.js";
 import "./cron/bookingMonitor.js";
 
 
@@ -61,13 +62,14 @@ app.get('/api/captcha', (req, res) => {
 
 app.use("/api/rooms", roomsRouter);
 app.use("/api/admin", adminBookingRoutes);
-app.use("/api/admin/dashboard", dashboardRoutes)
-app.use("/api/bookings", userRoutes  )
+app.use("/api/admin/dashboard", dashboardRoutes);
+app.use("/api/bookings", userRoutes);
 app.use("/api/auth", authRouter);
 app.use("/api/master",masterRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/user/dashboard", userDashboardRoutes);
-app.use("/api/filter", searchRoom)
+app.use("/api/filter", searchRoom);
+app.use("/api/refunds",RefundRoutes)
 
 app.listen(process.env.PORT, () => {
     console.log(`server running on port ${process.env.PORT}`);

@@ -173,7 +173,7 @@ function Revenue_by_user({ data }) {
   );
 }
 
-
+ 
 
 const Revenue_loss = ({ revenueLoss }) => (
   <Card className="shadow-lg bg-white p-6 text-center">

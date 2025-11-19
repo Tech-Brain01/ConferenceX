@@ -1,23 +1,29 @@
-import mysql from "mysql2/promise";
+import pg from "pg";
 import dotenv from "dotenv";
 dotenv.config();
 
-const pool = mysql.createPool({
+const { Pool } = pg;
+
+const pool = new Pool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10
+    port: process.env.DB_PORT || 5432,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    // Set search_path to use conference_booking schema
+    options: '-c search_path=conference_booking,public',
 });
 
 (async () => {
     try {
-        const connection = await pool.getConnection();
-        console.log("Connected to MySQL database successfully!");
-        connection.release(); 
+        const client = await pool.connect();
+        console.log("Connected to PostgreSQL database successfully!");
+        client.release(); 
     } catch (err) {
-        console.error("Failed to connect to MySQL database:", err.message);
+        console.error("Failed to connect to PostgreSQL database:", err.message);
     }
 })();
 

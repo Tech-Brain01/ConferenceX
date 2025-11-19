@@ -11,6 +11,10 @@ import {
   ChartBarIcon,
   HomeIcon,
   ArrowLeftOnRectangleIcon,
+  PencilSquareIcon,
+  UserGroupIcon,
+  ArrowPathIcon,
+  BanknotesIcon,
 } from "@heroicons/react/24/outline";
 import { Sidebar, SidebarBody, SidebarLink } from "./ui/SideBarUi.jsx";
 import { AuthContext } from "../context/AuthContext.jsx";
@@ -56,15 +60,34 @@ const AdminSidebar = ({ user }) => {
           href: "/admin/rooms",
           icon: <BuildingOfficeIcon className="h-5 w-5 shrink-0" />,
         },
+
+        {
+          label: "Manage Master",
+          href: "/admin/master",
+          icon: <Cog6ToothIcon className="h-5 w-5 shrink-0" />,
+        },
+
         {
           label: "Manage Bookings",
           href: "/admin/bookings",
           icon: <CalendarDaysIcon className="h-5 w-5 shrink-0" />,
         },
+
+        {
+          label: "Manual Bookings",
+          href: "/admin/manual/booking",
+          icon: <PencilSquareIcon className="h-5 w-5 shrink-0" />,
+        },
+
         {
           label: "Registered Users",
           href: "/admin/users",
-          icon: <UserIcon className="h-5 w-5 shrink-0" />,
+          icon: <UserGroupIcon className="h-5 w-5 shrink-0" />, // MULTIPLE USERS
+        },
+        {
+          label: "Refund Request",
+          href: "/admin/refund-request",
+          icon: <BanknotesIcon className="h-5 w-5 shrink-0" />,
         },
          {
           label: "Admin Bookings",
@@ -99,11 +122,9 @@ const AdminSidebar = ({ user }) => {
   ];
 
   return (
-    <Sidebar open={open}  animate={true}>
+    <Sidebar open={open} animate={true}>
       <SidebarBody className="justify-between bg-gradient-to-b from-slate-950 via-slate-900 to-slate-800 text-neutral-100">
-     
         <div className="flex flex-col gap-6">
-         
           <div
             className="flex items-center gap-2 px-3 py-4 cursor-pointer"
             onClick={handleDashboardLogoClick}
