@@ -12,11 +12,11 @@ const RoomFilter = ({ onResults }) => {
 
   // Debounced fetch function
   const fetchRooms = useCallback(
-    _.debounce(async (term, sort) => {
+    _.debounce(async (searchTerm, sort) => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:8080/api/filter/search-room?q=${encodeURIComponent(term)}&sort=${sort}`
+          `http://localhost:8080/api/filter/search-room?q=${encodeURIComponent(searchTerm)}&sort=${sort}`
         );
         const data = Array.isArray(response.data)
           ? response.data
@@ -51,7 +51,7 @@ const RoomFilter = ({ onResults }) => {
 
   const selectSuggestion = (name) => {
     setSearchTerm(name);
-    setSuggestions([]); // hide dropdown
+    setSuggestions([]); 
   };
 
   return (

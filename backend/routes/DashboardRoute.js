@@ -9,7 +9,8 @@ import {
  getRevenueByRoomController,
  getRevenueLossFromCancellationsController,
  getRevenueByUserController,
- getAvailableRoomsController
+ getAvailableRoomsController,
+ getRevenueProfitController
 } from "../controller/DashboardController.js";
 import { authenticateJWT, isAdmin } from "../middleware/authMiddleware.js";
 import {BookingAnalyticsExcelReportController, DashboardExcelReportController, RevenueAnalyticsExcelReportController} from "../controller/ExcelController.js";
@@ -30,6 +31,7 @@ router.get("/revenue-by-room",authenticateJWT , isAdmin, getRevenueByRoomControl
 router.get("/revenue-by-user",authenticateJWT , isAdmin, getRevenueByUserController)
 router.get("/revenue-loss",authenticateJWT , isAdmin, getRevenueLossFromCancellationsController)
 router.get("/available-rooms", authenticateJWT, isAdmin, getAvailableRoomsController);
+router.get("/revenue-profit", authenticateJWT , isAdmin, getRevenueProfitController);
 
 
 router.get("/export-excel-dashboard", authenticateJWT, isAdmin, DashboardExcelReportController);

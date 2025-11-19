@@ -89,11 +89,7 @@ const AdminSidebar = ({ user }) => {
           href: "/admin/refund-request",
           icon: <BanknotesIcon className="h-5 w-5 shrink-0" />,
         },
-         {
-          label: "Admin Bookings",
-          href: "/admin/payment",
-          icon: <CalendarDaysIcon className="h-5 w-5 shrink-0" />,
-        },
+         
       ],
     },
     {

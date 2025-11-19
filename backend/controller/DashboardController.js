@@ -10,7 +10,8 @@ import {
   getRevenueByRoom,
   getRevenueLossFromCancellations,
   getRevenueByUser,
-  getAvailableRooms
+  getAvailableRooms,
+  getRevenueProfit,
 } from "../models/DashboardModel.js";
 
 export const getDashboardStatsController = async (req, res) => {
@@ -135,6 +136,22 @@ export const getRevenueByUserController = async (req, res) => {
   }
 };
 
+
+export const getRevenueProfitController = async (req, res) => {
+  try {
+    const fromDate = req.query.from || null;
+    const toDate = req.query.to || null;
+
+    const revenueProfit = await getRevenueProfit(fromDate, toDate);
+
+    res.json({ totalProfit: revenueProfit });   
+  } catch (err) {
+    console.error("Revenue profit fetch failed:", err.message, err.stack);
+    res.status(500).json({ message: "Server error fetching revenue profit" });
+  }
+};
+
+
 export const getRevenueLossFromCancellationsController = async (req, res) => {
   try {
     const fromDate = req.query.from || null;
@@ -143,7 +160,7 @@ export const getRevenueLossFromCancellationsController = async (req, res) => {
     const loss = await getRevenueLossFromCancellations(fromDate, toDate);
     res.json({ revenueloss: loss });
   } catch (err) {
-    console.error("Revenue loss fetch failed:", err.message, err.stack);
+    console.err("Revenue loss fetch failed:", err.message, err.stack);
     res.status(500).json({ message: "Server error fetching revenue loss" });
   }
 };

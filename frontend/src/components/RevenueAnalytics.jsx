@@ -173,7 +173,18 @@ function Revenue_by_user({ data }) {
   );
 }
 
- 
+const Total_profit = ({totalProfit}) => (
+ <Card className="shadow-lg bg-white p-6 text-center mb-4">
+    <CardTitle className="text-lg font-semibold text-gray-800 mb-2">
+      Total Profit
+    </CardTitle>
+    <span className="flex flex-row gap-4 justify-evenly">
+     <p className="font-bold text-green-500 text-base">Total Income: ₹{totalProfit}</p>
+       <p className="text-base font-bold text-red-500">Total Refund: ₹{100}</p>
+    </span>
+    <p className="text-3xl font-bold text-green-900">Total Profit: ₹{totalProfit - 100}</p>
+  </Card>
+)
 
 const Revenue_loss = ({ revenueLoss }) => (
   <Card className="shadow-lg bg-white p-6 text-center">
@@ -197,11 +208,13 @@ const RevenueAnalytics = () => {
   const [revenueByRoomData, setRevenueByRoomData] = useState([]);
   const [revenueByUserData, setRevenueByUserData] = useState([]);
   const [revenueLoss, setRevenueLoss] = useState(0);
+  const [totalProfit, setTotalProfit] = useState(0);
 
   const [revenueLoadingTrend, setRevenueLoadingTrend] = useState(false);
   const [roomLoading, setroomLoading] = useState(false);
   const [userLoading, setUserLoading] = useState(false);
   const [loadingLoss, setLoadingLoss] = useState(false);
+  const [loadingProfit, setLoadingProfit] = useState(false);
 
   const getDefaultFromDate = new Date(
     new Date().getFullYear(),
@@ -312,8 +325,7 @@ const RevenueAnalytics = () => {
     fetchRevenueByRoom();
   }, [filterDate]);
 
-   
-     useEffect(() => {
+  useEffect(() => {
     async function fetchRevenueByUser() {
       setUserLoading(true);
       try {
@@ -339,8 +351,8 @@ const RevenueAnalytics = () => {
 
         if (!res.ok) throw new Error("Failed to fetch revenue by user");
         const result = await res.json();
-         
-              // console.log(result);
+
+        // console.log(result);
         const transformed = result.map((item) => ({
           name: item.user_name,
           total_revenue: item.total_revenue,
@@ -359,7 +371,45 @@ const RevenueAnalytics = () => {
     }
     fetchRevenueByUser();
   }, [filterDate]);
- 
+
+
+useEffect(() => {
+  async function fetchRevenueProfit() {
+    setLoadingProfit(true);
+    try {
+      const token = localStorage.getItem("token");
+      const from = filterDate?.fromDate
+        ? format(filterDate.fromDate, "yyyy-MM-dd")
+        : null;
+      const to = filterDate?.toDate
+        ? format(filterDate.toDate, "yyyy-MM-dd")
+        : null;
+        let url =`http://localhost:8080/api/admin/dashboard/revenue-profit`;
+         if (from && to)
+          url += `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
+            to
+          )}`;
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch revenue profit");
+        const result = await res.json();
+        setTotalProfit(result.totalProfit);
+      } catch (err) {
+        console.error(err);
+        setTotalProfit(0);
+      } finally {
+        setLoadingProfit(false);
+      }
+    }
+    fetchRevenueProfit();
+  }, [filterDate]);
+
 
   useEffect(() => {
     async function fetchRevenueLoss() {
@@ -385,7 +435,7 @@ const RevenueAnalytics = () => {
           },
         });
 
-        if (!res.ok) throw new Error("Failed to fetch booking trends");
+        if (!res.ok) throw new Error("Failed to fetch Revenue Loss");
         const result = await res.json();
         setRevenueLoss(result.revenueloss);
       } catch (err) {
@@ -433,12 +483,17 @@ const RevenueAnalytics = () => {
           <Revenue_by_room data={revenueByRoomData} />
         )}
 
-         {userLoading ? (
+        {userLoading ? (
           <p className="text-center text-gray-500">
             Loading revenue by user...
           </p>
         ) : (
           <Revenue_by_user data={revenueByUserData} />
+        )}
+        {loadingProfit ? (
+          <p className="text-center text-gray-500">Loading total profit...</p>
+        ) : (
+          <Total_profit totalProfit={totalProfit} />
         )}
 
         {loadingLoss ? (
