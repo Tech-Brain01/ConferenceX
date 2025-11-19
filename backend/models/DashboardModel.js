@@ -223,19 +223,32 @@ export const getRevenueByUser = async (fromDate, toDate) => {
 
 export const getRevenueProfit = async (fromDate, toDate) => {
   const query = `
-    SELECT    COALESCE(SUM(b.total_amount), 0) AS revenueProfit
+    SELECT COALESCE(SUM(b.total_amount), 0) AS revenueprofit
     FROM bookings b 
     JOIN rooms r ON r.id = b.room_id
-    WHERE b.status = 'approved' 
+    WHERE b.status = 'approved'
       AND b.start_date BETWEEN $1::date AND $2::date
   `;
 
-  const params = [fromDate, toDate];
-  const result = await pool.query(query, params);
-
- 
+  const result = await pool.query(query, [fromDate, toDate]);
   return Number(result.rows[0].revenueprofit) || 0;
 };
+
+
+export const getRevenueRefund = async (fromDate, toDate) => {
+  const query = `
+    SELECT COALESCE(SUM(rr.partial_amount), 0) AS revenuerefund
+    FROM refund_requests rr
+    JOIN bookings b ON b.booking_ref = rr.booking_ref
+    WHERE b.status = 'approved'
+      AND b.start_date BETWEEN $1::date AND $2::date
+  `;
+
+  const result = await pool.query(query, [fromDate, toDate]);
+  return Number(result.rows[0].revenuerefund) || 0;
+};
+
+
 
 export const getRevenueLossFromCancellations = async (fromDate, toDate) => {
   const query = `

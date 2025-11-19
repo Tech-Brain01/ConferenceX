@@ -12,6 +12,7 @@ import {
   getRevenueByUser,
   getAvailableRooms,
   getRevenueProfit,
+  getRevenueRefund
 } from "../models/DashboardModel.js";
 
 export const getDashboardStatsController = async (req, res) => {
@@ -143,8 +144,9 @@ export const getRevenueProfitController = async (req, res) => {
     const toDate = req.query.to || null;
 
     const revenueProfit = await getRevenueProfit(fromDate, toDate);
+    const revenueRefund = await getRevenueRefund(fromDate, toDate)
 
-    res.json({ totalProfit: revenueProfit });   
+    res.json({ totalProfit: revenueProfit , totalRefund: revenueRefund });   
   } catch (err) {
     console.error("Revenue profit fetch failed:", err.message, err.stack);
     res.status(500).json({ message: "Server error fetching revenue profit" });

@@ -173,16 +173,16 @@ function Revenue_by_user({ data }) {
   );
 }
 
-const Total_profit = ({totalProfit}) => (
+const Total_profit = ({totalProfit , totalRefund}) => (
  <Card className="shadow-lg bg-white p-6 text-center mb-4">
     <CardTitle className="text-lg font-semibold text-gray-800 mb-2">
       Total Profit
     </CardTitle>
     <span className="flex flex-row gap-4 justify-evenly">
      <p className="font-bold text-green-500 text-base">Total Income: ₹{totalProfit}</p>
-       <p className="text-base font-bold text-red-500">Total Refund: ₹{100}</p>
+       <p className="text-base font-bold text-red-500">Total Refund: ₹{totalRefund}</p>
     </span>
-    <p className="text-3xl font-bold text-green-900">Total Profit: ₹{totalProfit - 100}</p>
+    <p className="text-3xl font-bold text-green-900">Total Profit: ₹{totalProfit - totalRefund}</p>
   </Card>
 )
 
@@ -209,6 +209,7 @@ const RevenueAnalytics = () => {
   const [revenueByUserData, setRevenueByUserData] = useState([]);
   const [revenueLoss, setRevenueLoss] = useState(0);
   const [totalProfit, setTotalProfit] = useState(0);
+  const [totalRefund, setTotalRefund] = useState(0);
 
   const [revenueLoadingTrend, setRevenueLoadingTrend] = useState(false);
   const [roomLoading, setroomLoading] = useState(false);
@@ -400,9 +401,11 @@ useEffect(() => {
         if (!res.ok) throw new Error("Failed to fetch revenue profit");
         const result = await res.json();
         setTotalProfit(result.totalProfit);
+        setTotalRefund(result.totalRefund)
       } catch (err) {
         console.error(err);
         setTotalProfit(0);
+        setTotalRefund(0);
       } finally {
         setLoadingProfit(false);
       }
@@ -493,7 +496,7 @@ useEffect(() => {
         {loadingProfit ? (
           <p className="text-center text-gray-500">Loading total profit...</p>
         ) : (
-          <Total_profit totalProfit={totalProfit} />
+          <Total_profit totalProfit={totalProfit} totalRefund={totalRefund} />
         )}
 
         {loadingLoss ? (
