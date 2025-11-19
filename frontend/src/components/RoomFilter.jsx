@@ -2,33 +2,40 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "./ui/input";
 import axios from "axios";
 import _ from "lodash";
+import { FiSearch, FiX } from "react-icons/fi";
 
-const RoomFilter = ({ onResults, sortOrder, setSortOrder }) => {
-  const [filters, setFilters] = useState({
-    combined: "",
-    type: "name",
-  });
+const RoomFilter = ({ onResults }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOrder, setSortOrder] = useState("");
   const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
 
-  const fetchFilteredRooms = useCallback(
-    _.debounce(async (searchTerm, filterType) => {
-      if (!searchTerm) {
-        onResults([]);
-        setLoading(false);
-        return;
-      }
-
+  // Debounced fetch function
+  const fetchRooms = useCallback(
+    _.debounce(async (term, sort) => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `/api/filter/search-room?q=${encodeURIComponent(
-            searchTerm
-          )}&filter=${filterType}`
+          `http://localhost:8080/api/filter/search-room?q=${encodeURIComponent(term)}&sort=${sort}`
         );
-        onResults(response.data || []);
+        const data = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data.results)
+          ? response.data.results
+          : [];
+
+        onResults(data);
+
+        // Update suggestions only with room names
+        if (term) {
+          setSuggestions(data.map((room) => room.name));
+        } else {
+          setSuggestions([]);
+        }
       } catch (err) {
         console.error("Error fetching rooms:", err);
         onResults([]);
+        setSuggestions([]);
       } finally {
         setLoading(false);
       }
@@ -37,41 +44,57 @@ const RoomFilter = ({ onResults, sortOrder, setSortOrder }) => {
   );
 
   useEffect(() => {
-    fetchFilteredRooms(filters.combined, filters.type);
-  }, [filters.combined, filters.type, fetchFilteredRooms]);
+    fetchRooms(searchTerm, sortOrder);
+  }, [searchTerm, sortOrder, fetchRooms]);
 
- return (
-    <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-gray-800 rounded-lg">
-      {/* Left side: filter selector + search input */}
-      <div className="flex w-2/3 gap-2">
-        <select
-          value={filters.type}
-          onChange={(e) =>
-            setFilters({ ...filters, type: e.target.value })
-          }
-          className="p-2 rounded-md text-gray-900"
-        >
-          <option value="name">Room Name</option>
-          <option value="feature">Feature</option>
-        </select>
+  const clearSearch = () => setSearchTerm("");
 
-        <Input
-          type="text"
-          placeholder={`Search by ${filters.type === "name" ? "Name" : "Feature"}`}
-          value={filters.combined}
-          onChange={(e) =>
-            setFilters({ ...filters, combined: e.target.value })
-          }
-          className="w-full p-2 rounded-md text-gray-900"
-        />
+  const selectSuggestion = (name) => {
+    setSearchTerm(name);
+    setSuggestions([]); // hide dropdown
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row items-center gap-4 p-4 bg-gray-800 rounded-lg shadow-md relative">
+      <div className="flex flex-1 gap-2 w-full md:w-2/3 relative">
+        <div className="relative w-full">
+          <Input
+            type="text"
+            placeholder="Search by Room Name"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 pl-10 rounded-md text-gray-900 bg-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 transition"
+          />
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          {searchTerm && (
+            <FiX
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700"
+              onClick={clearSearch}
+            />
+          )}
+
+          {/* Auto-suggestions dropdown */}
+          {suggestions.length > 0 && (
+            <ul className="absolute z-50 w-full bg-white text-gray-900 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+              {suggestions.map((name, idx) => (
+                <li
+                  key={idx}
+                  className="p-2 hover:bg-gray-200 cursor-pointer"
+                  onClick={() => selectSuggestion(name)}
+                >
+                  {name}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
-      {/* Right side: sort by price */}
-      <div className="flex w-1/3 justify-end">
+      <div className="flex w-full md:w-1/3 justify-end">
         <select
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
-          className="p-2 rounded-md text-gray-900"
+          className="p-2 rounded-md text-gray-900 bg-gray-200 hover:bg-gray-300 transition"
         >
           <option value="">Sort by Price</option>
           <option value="low-to-high">Low to High</option>
@@ -79,8 +102,11 @@ const RoomFilter = ({ onResults, sortOrder, setSortOrder }) => {
         </select>
       </div>
 
-      {/* Loading indicator */}
-      {loading && <p className="w-full text-gray-300 mt-2">Loading...</p>}
+      {loading && (
+        <div className="w-full flex justify-center mt-2">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
+        </div>
+      )}
     </div>
   );
 };

@@ -22,7 +22,7 @@ export const filterRooms = async (searchTerm, filterBy, sortOrder) => {
     LEFT JOIN features f ON rf.feature_id = f.id
   `;
 
-  let params = [];
+  const params = [];
 
   if (filterBy === "name") {
     query += " WHERE r.name ILIKE $1";
@@ -51,3 +51,4 @@ export const filterRooms = async (searchTerm, filterBy, sortOrder) => {
     features: r.features ? r.features.split(",") : [],
   }));
 };
+

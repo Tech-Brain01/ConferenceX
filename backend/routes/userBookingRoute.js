@@ -297,6 +297,7 @@ router.patch("/:id/payment", authenticateJWT, async (req, res) => {
   const bookingId = req.params.id;
   const userId = req.user.id;
 
+
   try {
     // Fetch booking with room price
     const booking = await pool.query(
@@ -352,7 +353,7 @@ router.patch("/:id/payment", authenticateJWT, async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ err: "Server error" });
   }
 });
 

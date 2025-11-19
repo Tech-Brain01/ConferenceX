@@ -12,14 +12,9 @@ import {
   PaginationNext,
   PaginationEllipsis,
 } from "../../components/ui/pagination.jsx";
-import { Input } from "../../components/ui/input.jsx";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "../../components/ui/popover.jsx";
-import { Button } from "../../components/ui/Button.jsx";
-const statusTabs = ["all", "pending", "approved", "rejected", "cancelled"];
+import ManageBookingFilter from "./ManageBookingFilter.jsx";
+
+
 
 const ManageBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -27,10 +22,12 @@ const ManageBookings = () => {
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState("");
+  const [sortOrder, setSortOrder] = useState("Asc");
 
   const [currentPage, setCurrentPage] = useState(1);
   const bookingsPerPage = 6;
 
+  // Fetch bookings
   const fetchBookings = async (status) => {
     try {
       setLoading(true);
@@ -44,7 +41,6 @@ const ManageBookings = () => {
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const data = await res.json();
 
       if (!res.ok || !Array.isArray(data.bookings)) {
@@ -66,6 +62,7 @@ const ManageBookings = () => {
     }
   };
 
+  // Update status
   const updateStatus = async (bookingId, status, rejectResponse = "") => {
     setUpdating(true);
     const token = localStorage.getItem("token");
@@ -109,14 +106,16 @@ const ManageBookings = () => {
     fetchBookings(activeStatus);
   }, [activeStatus]);
 
-  const uniqueRooms = Array.from(new Set(bookings.map((b) => b.room_name)));
-
-  const filteredBookings = bookings.filter(
-    (booking) => !selectedRoom || booking.room_name === selectedRoom
-  );
+  // Filter & sort logic
+  const filteredBookings = bookings
+    .filter((b) => !selectedRoom || b.room_name === selectedRoom)
+    .sort((a, b) =>
+      sortOrder === "Asc"
+        ? new Date(a.start_date) - new Date(b.start_date)
+        : new Date(b.start_date) - new Date(a.start_date)
+    );
 
   const totalPages = Math.ceil(filteredBookings.length / bookingsPerPage);
-
   const indexOfLastBooking = currentPage * bookingsPerPage;
   const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
   const currentBookings = filteredBookings.slice(
@@ -124,16 +123,13 @@ const ManageBookings = () => {
     indexOfLastBooking
   );
 
+  const uniqueRooms = Array.from(new Set(bookings.map((b) => b.room_name)));
+
   const getPageItems = () => {
-    if (totalPages <= 7) {
-      return [...Array(totalPages).keys()].map((n) => n + 1);
-    }
+    if (totalPages <= 7) return [...Array(totalPages).keys()].map((n) => n + 1);
 
-    if (currentPage <= 4) {
-      return [1, 2, 3, 4, 5, "ellipsis", totalPages];
-    }
-
-    if (currentPage >= totalPages - 3) {
+    if (currentPage <= 4) return [1, 2, 3, 4, 5, "ellipsis", totalPages];
+    if (currentPage >= totalPages - 3)
       return [
         1,
         "ellipsis",
@@ -143,7 +139,6 @@ const ManageBookings = () => {
         totalPages - 1,
         totalPages,
       ];
-    }
 
     return [
       1,
@@ -158,64 +153,23 @@ const ManageBookings = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-4xl font-bold mb-10 text-center text-indigo-700 dark:text-indigo-400">
+      <h1 className="text-4xl font-bold mb-6 text-center text-indigo-700 dark:text-indigo-400">
         Manage Bookings
       </h1>
 
-      <div className="flex items-center justify-end mb-4">
-        <Popover>
-          <PopoverTrigger className="border rounded-2xl p-2 border-cyan-300 text-base cursor-pointer">
-            Filter by room name:{" "}
-            <span className="font-semibold">{selectedRoom || "All"}</span>
-          </PopoverTrigger>
-          <PopoverContent className="max-h-60 overflow-y-auto w-48 p-2 bg-white">
-            <Button
-              onClick={() => setSelectedRoom("")}
-              className={`block w-full text-left px-3 py-1 rounded-md mb-2 ${
-                selectedRoom === ""
-                  ? "bg-indigo-600 text-white"
-                  : "hover:bg-gray-100"
-              }`}
-            >
-              All Rooms
-            </Button>
-            {uniqueRooms.map((room) => (
-              <Button
-                key={room}
-                onClick={() => setSelectedRoom(room)}
-                className={`block w-full text-left px-3 py-1 rounded-md mb-1 ${
-                  selectedRoom === room
-                    ? "bg-indigo-600 text-white"
-                    : "hover:bg-gray-100"
-                }`}
-              >
-                {room}
-              </Button>
-            ))}
-          </PopoverContent>
-        </Popover>
-      </div>
+      {/* Filter Component */}
+      <ManageBookingFilter
+        bookings={bookings}
+        selectedRoom={selectedRoom}
+        setSelectedRoom={setSelectedRoom}
+        uniqueRooms={uniqueRooms}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+        activeStatus={activeStatus}
+        setActiveStatus={setActiveStatus}
+      />
 
-      <p className="text-black bg-indigo-100 p-2 rounded-lg mb-4 w-fit">
-        Total bookings: {bookings.length}
-      </p>
-
-      <div className="flex flex-wrap justify-center gap-3">
-        {statusTabs.map((status) => (
-          <button
-            key={status}
-            onClick={() => setActiveStatus(status)}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition ${
-              activeStatus === status
-                ? "bg-indigo-600 text-white shadow-lg"
-                : "bg-gray-200 hover:bg-gray-300 text-gray-700"
-            }`}
-          >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </button>
-        ))}
-      </div>
-
+      {/* Loading */}
       {loading && (
         <div className="flex justify-center items-center space-x-2 text-indigo-600">
           <ArrowPathIcon className="w-6 h-6 animate-spin" />
@@ -223,12 +177,14 @@ const ManageBookings = () => {
         </div>
       )}
 
+      {/* No bookings */}
       {!loading && currentBookings.length === 0 && (
         <p className="text-center text-gray-500 dark:text-gray-400">
           No bookings found.
         </p>
       )}
 
+      {/* Booking Cards */}
       {!loading &&
         currentBookings.map((booking) => (
           <BookingCard
@@ -241,17 +197,13 @@ const ManageBookings = () => {
           />
         ))}
 
+      {/* Pagination */}
       {!loading && totalPages > 1 && (
-        <Pagination
-          aria-label="Pagination Navigation"
-          className="mt-8 bg-white dark:bg-gray-800 rounded-md p-3 shadow-md flex items-center justify-center gap-4"
-        >
+        <Pagination className="mt-8 bg-white dark:bg-gray-800 rounded-md p-3 shadow-md flex items-center justify-center gap-4">
           <PaginationPrevious
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={currentPage === 1}
-            className="flex items-center gap-1 rounded-md px-3 py-2 text-indigo-600 hover:bg-indigo-100 disabled:text-gray-400 disabled:cursor-not-allowed transition"
           />
-
           <PaginationContent className="flex gap-2">
             {getPageItems().map((item, index) =>
               item === "ellipsis" ? (
@@ -271,7 +223,7 @@ const ManageBookings = () => {
                       "rounded-md px-3 py-2 text-sm font-medium transition",
                       item === currentPage
                         ? "bg-indigo-600 text-white shadow-md hover:bg-indigo-700"
-                        : "text-gray-700 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        : "text-gray-700 hover:bg-indigo-50"
                     )}
                   >
                     {item}
@@ -280,11 +232,9 @@ const ManageBookings = () => {
               )
             )}
           </PaginationContent>
-
           <PaginationNext
             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className="flex items-center gap-1 rounded-md px-3 py-2 text-indigo-600 hover:bg-indigo-100 disabled:text-gray-400 disabled:cursor-not-allowed transition"
           />
         </Pagination>
       )}
