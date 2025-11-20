@@ -12,6 +12,8 @@ import {
   getTotalRevenue,
   getUpcomingBookings,
   getRevenueByUser,
+  getRevenueRefund,
+  getRevenueProfit,
 } from "../models/DashboardModel.js";
 
 export const DashboardExcelReportController = async (req, res) => {
@@ -27,6 +29,7 @@ export const DashboardExcelReportController = async (req, res) => {
     const upcomingBookings = await getUpcomingBookings(fromDate, toDate);
     const bookingTrends = await getBookingTrends(fromDate, toDate);
     const revenueLoss = await getRevenueLossFromCancellations(fromDate, toDate);
+    const revenueProfit = await getRevenueProfitController(fromDate, toDate);
 
     const workbook = new ExcelJS.Workbook();
 
@@ -42,6 +45,7 @@ export const DashboardExcelReportController = async (req, res) => {
       { stats: "Total Revenue", value: totalRevenue },
       { stats: "Total Rooms", value: totalRooms },
       { stats: "Revenue Loss (Cancellations)", value: revenueLoss },
+      { stats: "Revenue Profit", value: revenueProfit },
     ]);
 
     const summaryHeaderRow = summarySheet.getRow(1);
@@ -367,6 +371,8 @@ export const RevenueAnalyticsExcelReportController = async (req, res) => {
     const revenueTrend = await getRevenueTrends(fromDate, toDate);
     const revenueByRoom = await getRevenueByRoom(fromDate, toDate);
     const revenueByUser = await getRevenueByUser(fromDate, toDate);
+    const revenueProfit = await getRevenueProfit(fromDate, toDate);
+    const revenueRefund = await getRevenueRefund(fromDate, toDate);
 
     const workbook = new ExcelJS.Workbook();
 
@@ -520,6 +526,68 @@ export const RevenueAnalyticsExcelReportController = async (req, res) => {
     // Number formatting
     revenueByRoomSheet.getColumn("total_bookings").numFmt = "#,##0";
     revenueByRoomSheet.getColumn("totalrevenue").numFmt = '"$"#,##0.00';
+
+    // revenue profit
+
+    // ----- REVENUE PROFIT SHEET -----
+
+   const revenueProfitSheet = workbook``.addWorksheet("Revenue Profit");
+
+revenueProfitSheet.columns = [
+  { header: "Sr No", key: "id", width: 10 },
+  { header: "User Name", key: "user_name", width: 25 },
+  { header: "Room Name", key: "room_name", width: 25 },
+  { header: "Booking Ref", key: "booking_ref", width: 20 },
+  { header: "Transaction No", key: "TXN", width: 25 },
+  { header: "User Reason", key: "user_res", width: 30 },
+  { header: "Status", key: "Status", width: 15 },
+  { header: "Partial Amount", key: "amount", width: 15 },
+  { header: "Admin Reason", key: "admin_res", width: 30 },
+];
+
+const profitData = revenueRefund.refundRows.map((row, i) => ({
+  id: i + 1,
+  user_name: row.user_name,
+  room_name: row.room_name,
+  booking_ref: row.booking_ref,
+  TXN: row.txn_no,
+  user_res: row.user_reason,
+  Status: row.status,
+  amount: row.partial_amount,
+  admin_res: row.admin_reason
+}));
+
+revenueProfitSheet.addRows(profitData);
+
+// Format header
+const header = revenueProfitSheet.getRow(1);
+header.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 12 };
+header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F497D" } };
+header.alignment = { horizontal: "center", vertical: "middle" };
+header.height = 20;
+
+header.eachCell((cell) => {
+  cell.border = {
+    top: { style: "thin" },
+    left: { style: "thin" },
+    bottom: { style: "thin" },
+    right: { style: "thin" }
+  };
+});
+
+revenueProfitSheet.views = [{ state: "frozen", ySplit: 1 }];
+
+revenueProfitSheet.getColumn("amount").numFmt = "#,##0.00";
+
+// Add TOTAL REFUND at top
+revenueProfitSheet.insertRow(1, {
+  id: "",
+  user_name: `TOTAL REFUND: ₹ ${revenueRefund.totalRefund}`,
+});
+
+revenueProfitSheet.mergeCells("A1:I1");
+revenueProfitSheet.getCell("A1").font = { bold: true, size: 14 };
+revenueProfitSheet.getCell("A1").alignment = { horizontal: "center" };
 
     /** --- Send buffer --- **/
     const buffer = await workbook.xlsx.writeBuffer();

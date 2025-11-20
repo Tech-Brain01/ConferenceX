@@ -236,18 +236,43 @@ export const getRevenueProfit = async (fromDate, toDate) => {
 
 
 export const getRevenueRefund = async (fromDate, toDate) => {
-  const query = `
-    SELECT COALESCE(SUM(rr.partial_amount), 0) AS revenuerefund
+  const rowsQuery = `
+    SELECT 
+        rr.booking_ref,
+        rr.room_name,
+        rr.txn_no AS TXN,
+        rr.user_reason AS user_res,
+        rr.status AS Status,
+        rr.partial_amount AS amount,
+        rr.admin_reason AS admin_res,
+        rr.user_id,
+        u.name AS user_name,
+        b.start_date,
+        b.end_date
+    FROM refund_requests rr
+    JOIN bookings b ON b.booking_ref = rr.booking_ref
+    JOIN users u ON u.id = rr.user_id
+    WHERE b.status = 'approved'
+      AND b.start_date BETWEEN $1 AND $2
+    ORDER BY rr.id DESC;
+  `;
+
+  const totalQuery = `
+    SELECT COALESCE(SUM(rr.partial_amount), 0) AS total_refund
     FROM refund_requests rr
     JOIN bookings b ON b.booking_ref = rr.booking_ref
     WHERE b.status = 'approved'
-      AND b.start_date BETWEEN $1::date AND $2::date
+      AND b.start_date BETWEEN $1 AND $2;
   `;
 
-  const result = await pool.query(query, [fromDate, toDate]);
-  return Number(result.rows[0].revenuerefund) || 0;
-};
+  const rowsResult = await pool.query(rowsQuery, [fromDate, toDate]);
+  const totalResult = await pool.query(totalQuery, [fromDate, toDate]);
 
+  return {
+    refundRows: rowsResult.rows,
+    totalRefund: Number(totalResult.rows[0].total_refund)
+  };
+};
 
 
 export const getRevenueLossFromCancellations = async (fromDate, toDate) => {

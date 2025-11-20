@@ -143,15 +143,26 @@ export const getRevenueProfitController = async (req, res) => {
     const fromDate = req.query.from || null;
     const toDate = req.query.to || null;
 
-    const revenueProfit = await getRevenueProfit(fromDate, toDate);
-    const revenueRefund = await getRevenueRefund(fromDate, toDate)
+    // Total profit from your model
+    const totalProfit = await getRevenueProfit(fromDate, toDate);
 
-    res.json({ totalProfit: revenueProfit , totalRefund: revenueRefund });   
+    // Refund rows + total refund amount
+    const { refundRows, totalRefund } = await getRevenueRefund(fromDate, toDate);
+
+    res.json({
+      totalProfit,
+      refund: {
+        totalRefund,
+        refundRows
+      }
+    });
+
   } catch (err) {
     console.error("Revenue profit fetch failed:", err.message, err.stack);
     res.status(500).json({ message: "Server error fetching revenue profit" });
   }
 };
+
 
 
 export const getRevenueLossFromCancellationsController = async (req, res) => {
